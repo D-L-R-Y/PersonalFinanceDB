@@ -1,7 +1,7 @@
 {
   "name": "financedb",
   "productName": "FinanceDB",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Personal finance tracker with a real SQLite database",
   "main": "main.js",
   "author": "FinanceDB",

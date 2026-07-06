@@ -51,8 +51,8 @@ Since the core uses Web technologies, you can still just double-click `index.htm
 | 🌐 All Time View | Toggle to see all-time totals |
 | 🗑️ Delete | Remove any transaction from the list |
 | 💾 Auto-Save | Data is saved to your local storage automatically |
-| 📤 Export .db | Download your database as a real SQLite `.db` file |
-| 📥 Import .db | Restore a previously exported `.db` file |
+| 📤 Export Data | Download your transactions as `.db`, `.csv`, or `.json` |
+| 📥 Import Data | Restore from `.db`, or append new data from `.csv`/`.json` |
 
 ---
 

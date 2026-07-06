@@ -673,6 +673,160 @@ function importDB(file) {
   reader.readAsArrayBuffer(file);
 }
 
+// ── CSV & JSON Export/Import ───────────────────────────────
+
+function escapeCSV(str) {
+  if (typeof str !== 'string') return str;
+  if (str.includes(',') || str.includes('"') || str.includes('\n')) {
+    return `"${str.replace(/"/g, '""')}"`;
+  }
+  return str;
+}
+
+function parseCSV(text) {
+  const result = [];
+  let row = [];
+  let current = '';
+  let inQuotes = false;
+  
+  for (let i = 0; i < text.length; i++) {
+    const char = text[i];
+    if (inQuotes) {
+      if (char === '"') {
+        if (i + 1 < text.length && text[i + 1] === '"') {
+          current += '"';
+          i++;
+        } else {
+          inQuotes = false;
+        }
+      } else {
+        current += char;
+      }
+    } else {
+      if (char === '"') {
+        inQuotes = true;
+      } else if (char === ',') {
+        row.push(current);
+        current = '';
+      } else if (char === '\n' || (char === '\r' && text[i+1] === '\n')) {
+        if (char === '\r') i++;
+        row.push(current);
+        if (row.length > 1 || row[0] !== '') result.push(row);
+        row = [];
+        current = '';
+      } else {
+        current += char;
+      }
+    }
+  }
+  if (current !== '' || row.length > 0) {
+    row.push(current);
+    result.push(row);
+  }
+  return result;
+}
+
+function exportCSV() {
+  const result = db.exec("SELECT id, type, amount, category, date, note FROM transactions ORDER BY date DESC");
+  if (!result.length) return showToast('No transactions to export.', 'error');
+  
+  const headers = ['id', 'type', 'amount', 'category', 'date', 'note'];
+  const rows = result[0].values.map(row => row.map(escapeCSV).join(','));
+  const csvContent = [headers.join(','), ...rows].join('\n');
+  
+  const blob = new Blob([csvContent], { type: 'text/csv' });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href     = url;
+  a.download = `finance_${new Date().toISOString().slice(0,10)}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+  showToast('Exported to CSV!', 'success');
+}
+
+function exportJSON() {
+  const result = db.exec("SELECT id, type, amount, category, date, note FROM transactions ORDER BY date DESC");
+  if (!result.length) return showToast('No transactions to export.', 'error');
+  
+  const columns = result[0].columns;
+  const data = result[0].values.map(row => {
+    let obj = {};
+    columns.forEach((col, i) => obj[col] = row[i]);
+    return obj;
+  });
+  
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href     = url;
+  a.download = `finance_${new Date().toISOString().slice(0,10)}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+  showToast('Exported to JSON!', 'success');
+}
+
+function importCSV(file) {
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      const rows = parseCSV(e.target.result);
+      if (rows.length < 2) throw new Error('No data');
+      
+      const headers = rows[0].map(h => h.trim().toLowerCase());
+      db.run("BEGIN TRANSACTION");
+      let count = 0;
+      
+      for (let i = 1; i < rows.length; i++) {
+        if (rows[i].length !== headers.length) continue;
+        const obj = {};
+        headers.forEach((h, idx) => obj[h] = rows[i][idx]);
+        
+        if (obj.type && obj.amount && obj.date) {
+          db.run(`INSERT INTO transactions (id, type, amount, category, date, note) VALUES (?, ?, ?, ?, ?, ?)`, 
+                 [obj.id || Date.now().toString() + i, obj.type, parseFloat(obj.amount) || 0, obj.category || '', obj.date, obj.note || '']);
+          count++;
+        }
+      }
+      db.run("COMMIT");
+      persistDB();
+      renderDashboard();
+      showToast(`Imported ${count} transactions from CSV!`, 'success');
+    } catch (err) {
+      try { db.run("ROLLBACK"); } catch(ex){}
+      showToast('Failed to parse CSV.', 'error');
+    }
+  };
+  reader.readAsText(file);
+}
+
+function importJSON(file) {
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      const data = JSON.parse(e.target.result);
+      if (!Array.isArray(data)) throw new Error('Not an array');
+      
+      db.run("BEGIN TRANSACTION");
+      let count = 0;
+      for (const obj of data) {
+        if (obj.type && obj.amount && obj.date) {
+          db.run(`INSERT INTO transactions (id, type, amount, category, date, note) VALUES (?, ?, ?, ?, ?, ?)`, 
+                 [obj.id || Date.now().toString() + count, obj.type, parseFloat(obj.amount) || 0, obj.category || '', obj.date, obj.note || '']);
+          count++;
+        }
+      }
+      db.run("COMMIT");
+      persistDB();
+      renderDashboard();
+      showToast(`Imported ${count} transactions from JSON!`, 'success');
+    } catch (err) {
+      try { db.run("ROLLBACK"); } catch(ex){}
+      showToast('Failed to parse JSON.', 'error');
+    }
+  };
+  reader.readAsText(file);
+}
+
 // ── Form Validation & Submission ───────────────────────────
 function setupForms() {
 
@@ -868,16 +1022,29 @@ function setupEventListeners() {
     if (e.key === 'Enter') document.getElementById('btnAddCategory').click();
   });
 
-  // Export
-  document.getElementById('btnExport').addEventListener('click', exportDB);
+  // Export/Import Menus
+  document.getElementById('btnExportMenu').addEventListener('click', () => openModal('modalExport'));
+  document.getElementById('btnImportMenu').addEventListener('click', () => openModal('modalImport'));
+  document.getElementById('closeExport').addEventListener('click', () => closeModal('modalExport'));
+  document.getElementById('closeImport').addEventListener('click', () => closeModal('modalImport'));
 
-  // Import
-  document.getElementById('importFile').addEventListener('change', e => {
+  // Export actions
+  document.getElementById('btnExportDB').addEventListener('click', () => { closeModal('modalExport'); exportDB(); });
+  document.getElementById('btnExportCSV').addEventListener('click', () => { closeModal('modalExport'); exportCSV(); });
+  document.getElementById('btnExportJSON').addEventListener('click', () => { closeModal('modalExport'); exportJSON(); });
+
+  // Import actions
+  document.getElementById('importFileDB').addEventListener('change', e => {
     const file = e.target.files[0];
-    if (file) {
-      importDB(file);
-      e.target.value = '';
-    }
+    if (file) { closeModal('modalImport'); importDB(file); e.target.value = ''; }
+  });
+  document.getElementById('importFileCSV').addEventListener('change', e => {
+    const file = e.target.files[0];
+    if (file) { closeModal('modalImport'); importCSV(file); e.target.value = ''; }
+  });
+  document.getElementById('importFileJSON').addEventListener('change', e => {
+    const file = e.target.files[0];
+    if (file) { closeModal('modalImport'); importJSON(file); e.target.value = ''; }
   });
 }
 

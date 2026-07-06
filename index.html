@@ -36,15 +36,14 @@
           <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
         </button>
         <div class="db-controls">
-          <button id="btnExport" class="btn btn-ghost btn-sm" title="Export database">
+          <button id="btnExportMenu" class="btn btn-ghost btn-sm" title="Export Data">
             <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-            Export .db
+            Export Data
           </button>
-          <label class="btn btn-ghost btn-sm" title="Import database" style="cursor:pointer;">
+          <button id="btnImportMenu" class="btn btn-ghost btn-sm" title="Import Data">
             <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-            Import .db
-            <input type="file" id="importFile" accept=".db" style="display:none;" />
-          </label>
+            Import Data
+          </button>
         </div>
         <button id="btnAddIncome" class="btn btn-accent">
           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
@@ -332,6 +331,49 @@
           </button>
         </div>
         <p style="font-size:0.72rem;color:var(--color-text-dim);margin-top:10px;">Changes save automatically. Deleting a category shows its transactions as "Others".</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── MODAL: Export Data ────────────────────────────── -->
+  <div class="modal-overlay" id="modalExport" role="dialog" aria-modal="true" aria-labelledby="exportModalTitle">
+    <div class="modal" style="max-width: 400px;">
+      <div class="modal-header">
+        <span class="modal-title" id="exportModalTitle">Export Data</span>
+        <button class="modal-close" id="closeExport" aria-label="Close">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 10px; margin-top: 15px;">
+        <button id="btnExportDB" class="btn btn-primary">Export as .db (Full Backup)</button>
+        <button id="btnExportCSV" class="btn btn-ghost">Export as .csv (Spreadsheet)</button>
+        <button id="btnExportJSON" class="btn btn-ghost">Export as .json (Raw Data)</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── MODAL: Import Data ────────────────────────────── -->
+  <div class="modal-overlay" id="modalImport" role="dialog" aria-modal="true" aria-labelledby="importModalTitle">
+    <div class="modal" style="max-width: 400px;">
+      <div class="modal-header">
+        <span class="modal-title" id="importModalTitle">Import Data</span>
+        <button class="modal-close" id="closeImport" aria-label="Close">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 10px; margin-top: 15px;">
+        <label class="btn btn-primary" style="cursor:pointer; justify-content:center;">
+          Restore from .db (Replaces existing)
+          <input type="file" id="importFileDB" accept=".db" style="display:none;" />
+        </label>
+        <label class="btn btn-ghost" style="cursor:pointer; justify-content:center;">
+          Import from .csv (Appends transactions)
+          <input type="file" id="importFileCSV" accept=".csv" style="display:none;" />
+        </label>
+        <label class="btn btn-ghost" style="cursor:pointer; justify-content:center;">
+          Import from .json (Appends transactions)
+          <input type="file" id="importFileJSON" accept=".json" style="display:none;" />
+        </label>
       </div>
     </div>
   </div>
