@@ -9,24 +9,32 @@ A modern, standalone personal finance tracker running as a desktop app, powered 
 
 ## How to Install and Run
 
-### Option 1: Standalone Windows App (Recommended)
-You can build a standalone installer that requires no browser or setup to run:
-1. Ensure you have Node.js installed.
-2. Open a terminal in the project folder and run:
+### Option 1: Direct Download (Recommended)
+The easiest way to get started is to download the pre-built desktop app. No installation or coding experience required.
+
+1. Go to the [Releases](../../releases/latest) page.
+2. Download the `FinanceDB Setup.exe` file.
+3. Double-click the downloaded file to install and run the app.
+
+### Option 2: Build from Source (For Developers)
+If you want to modify the code or build the app yourself:
+
+1. Ensure you have [Node.js](https://nodejs.org/) installed.
+2. Clone this repository and open a terminal in the project folder.
+3. Run the following commands:
    ```bash
    npm install
    npm run build
    ```
-3. Find the generated installer inside the `dist/` folder (e.g. `FinanceDB Setup 1.0.0.exe`) and double-click to install. 
+4. Find the generated installer inside the `dist/` folder and double-click to install.
 
-### Option 2: Run in Development Mode
-To test the app locally without building:
+### Option 3: Run in Development Mode
+To test the app locally without building the `.exe`:
 ```bash
 npm install
 npm start
 ```
 
-### Option 3: Run in Browser
 Since the core uses Web technologies, you can still just double-click `index.html` in your file explorer to open it in Chrome/Edge, though the desktop app provides a more integrated experience.
 
 ---
