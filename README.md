@@ -2,7 +2,8 @@
 
 A modern, standalone personal finance tracker running as a desktop app, powered by a real **SQLite database** stored entirely on your local machine.
 
-![App Demo](https://github.com/D-L-R-Y/PersonalFinanceDB/raw/main/demo.webp)
+<img width="929" height="977" alt="demo" src="https://github.com/user-attachments/assets/46008b44-0088-4444-ac1b-d81b9106dd51" />
+
 
 ---
 
