@@ -2,7 +2,7 @@
 
 A modern, standalone personal finance tracker running as a desktop app, powered by a real **SQLite database** stored entirely on your local machine.
 
-![App Demo](demo.webp)
+<img src="demo.webp" alt="App Demo" width="100%" />
 
 ---
 
