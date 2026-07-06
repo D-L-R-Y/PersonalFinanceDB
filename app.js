@@ -334,6 +334,12 @@ function buildWhere() {
   return `AND date >= '${start}' AND date <= '${end}'`;
 }
 
+function buildCumulativeWhere() {
+  if (isAllTime) return '';
+  const { end } = monthRangeISO(viewYear, viewMonth);
+  return `AND date <= '${end}'`;
+}
+
 // ── Render Dashboard ───────────────────────────────────────
 function renderDashboard() {
   const where      = buildWhere();
@@ -348,7 +354,9 @@ function renderDashboard() {
   document.getElementById('expenseCount').textContent = `${summary.expenseCount} transaction${summary.expenseCount !== 1 ? 's' : ''}`;
 
   // Balance — show negative with "−" prefix and red color when overspent
-  const balance   = summary.totalIncome - summary.totalExpense;
+  const cumulativeWhere   = buildCumulativeWhere();
+  const cumulativeSummary = querySummary(cumulativeWhere);
+  const balance   = cumulativeSummary.totalIncome - cumulativeSummary.totalExpense;
   const balanceEl = document.getElementById('totalBalance');
   const balanceSub = document.getElementById('balanceSub');
   balanceEl.className = 'card-value balance';
@@ -360,7 +368,7 @@ function renderDashboard() {
   } else {
     balanceEl.textContent  = formatRp(balance);
     balanceEl.style.color  = '';
-    if (balanceSub) balanceSub.textContent = 'Income − Spending';
+    if (balanceSub) balanceSub.textContent = 'Total Available Balance';
   }
 
 
