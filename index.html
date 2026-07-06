@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Personal Finance Database</title>
+  <meta name="description" content="Personal finance tracker with SQL database — track income, expenses, and spending categories with an interactive dashboard." />
+  <link rel="stylesheet" href="style.css" />
+  <!-- sql.js (SQLite in WebAssembly) -->
+  <script src="vendor/sql-wasm.js"></script>
+  <!-- Chart.js -->
+  <script src="vendor/chart.umd.min.js"></script>
+  <!-- Lucide Icons -->
+  <script src="vendor/lucide.min.js"></script>
+</head>
+<body>
+  <div id="app">
+
+    <!-- ── Header ───────────────────────────────────────── -->
+    <header class="app-header">
+      <div class="app-logo">
+        <div class="app-logo-icon">
+          <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/>
+          </svg>
+        </div>
+        <div>
+          <div class="app-title" id="appHeadline">My Finances</div>
+          <div class="app-subtitle">run by FinanceDB</div>
+        </div>
+      </div>
+
+      <div class="header-actions">
+        <!-- Settings gear -->
+        <button id="btnSettings" class="btn-settings" title="Settings" aria-label="Open settings">
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        </button>
+        <div class="db-controls">
+          <button id="btnExport" class="btn btn-ghost btn-sm" title="Export database">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            Export .db
+          </button>
+          <label class="btn btn-ghost btn-sm" title="Import database" style="cursor:pointer;">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+            Import .db
+            <input type="file" id="importFile" accept=".db" style="display:none;" />
+          </label>
+        </div>
+        <button id="btnAddIncome" class="btn btn-accent">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Add Income
+        </button>
+        <button id="btnAddSpending" class="btn btn-primary">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Add Spending
+        </button>
+      </div>
+    </header>
+
+    <!-- ── Filter Bar ────────────────────────────────────── -->
+    <div class="filter-bar">
+      <label>Showing:</label>
+      <div class="month-nav" id="monthNav">
+        <button class="btn btn-icon" id="btnPrevMonth" title="Previous month">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+        </button>
+        <span id="monthLabel">July 2026</span>
+        <button class="btn btn-icon" id="btnNextMonth" title="Next month">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+        </button>
+      </div>
+      <button class="toggle-alltime" id="btnAllTime">
+        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        All Time
+      </button>
+    </div>
+
+    <!-- ── Summary Cards ──────────────────────────────────── -->
+    <div class="summary-grid" id="summaryGrid">
+      <div class="summary-card income">
+        <div class="card-label">Total Income</div>
+        <div class="card-value income" id="totalIncome">Rp 0</div>
+        <div class="card-sub" id="incomeCount">0 transactions</div>
+        <svg class="card-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
+      </div>
+      <div class="summary-card expense">
+        <div class="card-label">Total Spending</div>
+        <div class="card-value expense" id="totalExpense">Rp 0</div>
+        <div class="card-sub" id="expenseCount">0 transactions</div>
+        <svg class="card-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polyline points="23 18 13.5 8.5 8.5 13.5 1 6"/><polyline points="17 18 23 18 23 12"/></svg>
+      </div>
+      <div class="summary-card balance">
+        <div class="card-label">Balance</div>
+        <div class="card-value balance" id="totalBalance">Rp 0</div>
+        <div class="card-sub" id="balanceSub">Income − Spending</div>
+        <svg class="card-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+      </div>
+      <div class="summary-card top-cat">
+        <div class="card-label">Top Category</div>
+        <div class="card-value top-cat" id="topCategory">—</div>
+        <div class="card-sub" id="topCategoryAmount">No spending yet</div>
+        <svg class="card-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M18 20V10"/><path d="M12 20V4"/><path d="M6 20v-6"/></svg>
+      </div>
+    </div>
+
+    <!-- ── Main Content Grid ──────────────────────────────── -->
+    <div class="content-grid">
+
+      <!-- Donut Chart -->
+      <div class="glass-card">
+        <div class="card-header">
+          <span class="card-title">Spending by Category</span>
+          <span class="card-badge" id="chartBadge">This Month</span>
+        </div>
+        <div id="chartArea">
+          <div class="chart-container">
+            <canvas id="donutChart"></canvas>
+            <div class="chart-center-label">
+              <span class="center-value" id="chartCenterValue">Rp 0</span>
+              <span class="center-sub">total spent</span>
+            </div>
+          </div>
+          <div class="category-legend" id="categoryLegend"></div>
+        </div>
+        <div class="no-chart-state" id="noChartState" style="display:none;">
+          <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          <p>No spending data yet.<br/>Add your first expense to see the chart.</p>
+        </div>
+      </div>
+
+      <!-- Recent Transactions -->
+      <div class="glass-card">
+        <div class="card-header">
+          <span class="card-title">Recent Transactions</span>
+          <span class="card-badge" id="txBadge">Last 20</span>
+        </div>
+        <div id="transactionsList" class="transactions-list">
+          <div class="empty-state">
+            <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
+            <p>No transactions yet.<br/>Start by adding income or spending.</p>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /content-grid -->
+
+  </div><!-- /app -->
+
+  <!-- ────────────────────────────────────────────────────── -->
+  <!--  MODAL: Add Spending                                  -->
+  <!-- ────────────────────────────────────────────────────── -->
+  <div class="modal-overlay" id="modalSpending" role="dialog" aria-modal="true" aria-labelledby="spendingModalTitle">
+    <div class="modal">
+      <div class="modal-header">
+        <span class="modal-title" id="spendingModalTitle">Add Spending</span>
+        <button class="modal-close" id="closeSpending" aria-label="Close">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+
+      <form id="formSpending" novalidate>
+        <!-- Amount -->
+        <div class="form-group">
+          <label class="form-label" for="spendAmount">Amount</label>
+          <div class="input-wrapper">
+            <span class="input-prefix">Rp</span>
+            <input type="text" inputmode="numeric" id="spendAmount" class="form-input has-prefix" placeholder="0" required autocomplete="off" />
+          </div>
+        </div>
+
+        <!-- Category -->
+        <div class="form-group">
+          <label class="form-label">Category</label>
+          <div class="category-grid" id="categoryGrid">
+            <!-- Populated by JS -->
+          </div>
+          <input type="hidden" id="selectedCategory" />
+        </div>
+
+        <!-- Note -->
+        <div class="form-group">
+          <label class="form-label" for="spendNote">Note <span style="color:var(--color-text-dim);text-transform:none;font-weight:400;">(optional)</span></label>
+          <input type="text" id="spendNote" class="form-input form-input-text" placeholder="e.g. Lunch at warung" autocomplete="off" />
+        </div>
+
+        <!-- Date -->
+        <div class="form-group">
+          <label class="form-label" for="spendDate">Date</label>
+          <input type="date" id="spendDate" class="form-input" required />
+        </div>
+
+        <button type="submit" class="btn btn-primary btn-lg" style="width:100%;">
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+          Save Spending
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- ────────────────────────────────────────────────────── -->
+  <!--  MODAL: Add Income                                    -->
+  <!-- ────────────────────────────────────────────────────── -->
+  <div class="modal-overlay" id="modalIncome" role="dialog" aria-modal="true" aria-labelledby="incomeModalTitle">
+    <div class="modal">
+      <div class="modal-header">
+        <span class="modal-title" id="incomeModalTitle">Add Income</span>
+        <button class="modal-close" id="closeIncome" aria-label="Close">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+
+      <form id="formIncome" novalidate>
+        <!-- Amount -->
+        <div class="form-group">
+          <label class="form-label" for="incomeAmount">Amount</label>
+          <div class="input-wrapper">
+            <span class="input-prefix">Rp</span>
+            <input type="text" inputmode="numeric" id="incomeAmount" class="form-input has-prefix" placeholder="0" required autocomplete="off" />
+          </div>
+        </div>
+
+        <!-- Note -->
+        <div class="form-group">
+          <label class="form-label" for="incomeNote">Note <span style="color:var(--color-text-dim);text-transform:none;font-weight:400;">(optional)</span></label>
+          <input type="text" id="incomeNote" class="form-input form-input-text" placeholder="e.g. Monthly salary" autocomplete="off" />
+        </div>
+
+        <!-- Date -->
+        <div class="form-group">
+          <label class="form-label" for="incomeDate">Date</label>
+          <input type="date" id="incomeDate" class="form-input" required />
+        </div>
+
+        <button type="submit" class="btn btn-accent btn-lg" style="width:100%;">
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+          Save Income
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- ────────────────────────────────────────────────────── -->
+  <!--  MODAL: Confirm Delete                                -->
+  <!-- ────────────────────────────────────────────────────── -->
+  <div class="modal-overlay" id="modalDelete" role="dialog" aria-modal="true" aria-labelledby="deleteModalTitle">
+    <div class="modal" style="max-width: 380px;">
+      <div class="modal-header">
+        <span class="modal-title" id="deleteModalTitle">Delete Transaction</span>
+        <button class="modal-close" id="closeDelete" aria-label="Close">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+
+      <!-- Warning icon + message -->
+      <div style="display:flex; flex-direction:column; align-items:center; gap:16px; padding: 8px 0 24px; text-align:center;">
+        <div style="width:56px;height:56px;border-radius:50%;background:rgba(220,38,38,0.12);border:1px solid rgba(220,38,38,0.25);display:flex;align-items:center;justify-content:center;">
+          <svg xmlns="http://www.w3.org/2000/svg" width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#EF4444" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
+        </div>
+        <div>
+          <p style="font-size:0.9rem;color:var(--color-text);font-weight:500;margin-bottom:6px;">Are you sure you want to delete this?</p>
+          <p id="deleteModalDetail" style="font-size:0.8rem;color:var(--color-text-muted);"></p>
+        </div>
+      </div>
+
+      <!-- Buttons -->
+      <div style="display:flex; gap:12px;">
+        <button id="btnDeleteCancel" class="btn btn-ghost" style="flex:1;">
+          Cancel
+        </button>
+        <button id="btnDeleteConfirm" class="btn btn-danger" style="flex:1;">
+          <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
+          Delete
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ────────────────────────────────────────────────────── -->
+  <!--  MODAL: Settings                                      -->
+  <!-- ────────────────────────────────────────────────────── -->
+  <div class="modal-overlay" id="modalSettings" role="dialog" aria-modal="true" aria-labelledby="settingsModalTitle">
+    <div class="modal settings-modal">
+      <div class="modal-header">
+        <span class="modal-title" id="settingsModalTitle">Settings</span>
+        <button class="modal-close" id="closeSettings" aria-label="Close">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+
+      <!-- Tab Navigation -->
+      <div class="settings-tabs" role="tablist">
+        <button class="settings-tab active" data-tab="profile" role="tab" aria-selected="true">Profile</button>
+        <button class="settings-tab" data-tab="categories" role="tab" aria-selected="false">Categories</button>
+      </div>
+
+      <!-- ── Profile Tab ──────────────────────────────────── -->
+      <div class="settings-section active" id="tab-profile">
+        <div class="settings-label">Display Name</div>
+        <div class="form-group">
+          <label class="form-label" for="settingsName">App Headline</label>
+          <input type="text" id="settingsName" class="form-input form-input-text" placeholder="e.g. Ahmad's Finances" maxlength="40" autocomplete="off" />
+          <span style="font-size:0.72rem;color:var(--color-text-dim);">Shown below the FinanceDB logo on the dashboard</span>
+        </div>
+
+        <div class="settings-label" style="margin-top:20px;">Currency</div>
+        <div class="form-group">
+          <label class="form-label" for="settingsCurrency">Currency Symbol</label>
+          <input type="text" id="settingsCurrency" class="form-input" placeholder="Rp" maxlength="6" autocomplete="off" style="max-width:100px;" />
+          <span style="font-size:0.72rem;color:var(--color-text-dim);">Prefix shown before all amounts (e.g. Rp, $, €)</span>
+        </div>
+
+        <button id="btnSaveProfile" class="btn btn-primary btn-lg" style="width:100%;margin-top:8px;">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+          Save Profile
+        </button>
+      </div>
+
+      <!-- ── Categories Tab ────────────────────────────────── -->
+      <div class="settings-section" id="tab-categories">
+        <div class="settings-label">Spending Categories</div>
+        <div class="cat-settings-list" id="catSettingsList">
+          <!-- Populated by JS -->
+        </div>
+
+        <!-- Add new category -->
+        <div class="add-cat-row">
+          <input type="color" id="newCatColor" class="add-cat-color" value="#06B6D4" title="Pick a color" />
+          <input type="text" id="newCatName" class="add-cat-name" placeholder="New category name..." maxlength="24" autocomplete="off" />
+          <button id="btnAddCategory" class="btn btn-primary btn-sm">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            Add
+          </button>
+        </div>
+        <p style="font-size:0.72rem;color:var(--color-text-dim);margin-top:10px;">Changes save automatically. Deleting a category shows its transactions as "Others".</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Toast Container ───────────────────────────────── -->
+  <div class="toast-container" id="toastContainer" aria-live="polite"></div>
+
+
+  <script src="app.js"></script>
+</body>
+</html>

@@ -1,0 +1,10 @@
+# Node modules & build output
+node_modules/
+dist/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Design system (not needed in app)
+design-system/

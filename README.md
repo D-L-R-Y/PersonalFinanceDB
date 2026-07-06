@@ -1,0 +1,85 @@
+# Personal Finance Database
+
+A modern, standalone personal finance tracker running as a desktop app, powered by a real **SQLite database** stored entirely on your local machine.
+
+![App Demo](demo.webp)
+
+---
+
+## How to Install and Run
+
+### Option 1: Standalone Windows App (Recommended)
+You can build a standalone installer that requires no browser or setup to run:
+1. Ensure you have Node.js installed.
+2. Open a terminal in the project folder and run:
+   ```bash
+   npm install
+   npm run build
+   ```
+3. Find the generated installer inside the `dist/` folder (e.g. `FinanceDB Setup 1.0.0.exe`) and double-click to install. 
+
+### Option 2: Run in Development Mode
+To test the app locally without building:
+```bash
+npm install
+npm start
+```
+
+### Option 3: Run in Browser
+Since the core uses Web technologies, you can still just double-click `index.html` in your file explorer to open it in Chrome/Edge, though the desktop app provides a more integrated experience.
+
+---
+
+## Features
+
+| Feature | Description |
+|---|---|
+| 📊 Dashboard | Summary cards + donut chart of spending by category |
+| ⚙️ Custom Settings | Personalize your app headline, currency symbol, and category colors/names |
+| ➕ Add Spending | Log expenses with customized categories |
+| ➕ Add Income | Log income |
+| 📅 Month View | Filter by current month with prev/next navigation |
+| 🌐 All Time View | Toggle to see all-time totals |
+| 🗑️ Delete | Remove any transaction from the list |
+| 💾 Auto-Save | Data is saved to your local storage automatically |
+| 📤 Export .db | Download your database as a real SQLite `.db` file |
+| 📥 Import .db | Restore a previously exported `.db` file |
+
+---
+
+## How It Works
+
+This application is fundamentally a web app packaged into a desktop executable. Here is how the pieces fit together:
+
+1. **In-Memory Database**: Instead of running a traditional database server, the app uses `sql.js` (SQLite compiled to WebAssembly). This allows a fully functional, relational SQL database to run directly inside the app's memory.
+2. **Local Persistence**: Every time you add or delete a transaction, the app takes a snapshot of the active database and saves it directly to your computer's local storage. When you open the app again, it reloads that snapshot back into memory.
+3. **100% Offline & Private**: Because it runs entirely through Electron (which bundles a browser engine into a `.exe`), all your financial data stays securely on your device. There is no cloud sync, no tracking, and no internet connection required.
+4. **Data Portability**: The database operates as a standard SQLite format. The "Export .db" feature lets you download your data as a real `.db` file that can be opened in any standard SQLite database viewer or imported back into the app later.
+
+---
+
+## Technology Stack
+
+| Layer | Technology |
+|---|---|
+| Desktop Framework| Electron + electron-builder |
+| UI | HTML5 + Vanilla CSS + JavaScript (ES6+) |
+| Database | SQLite via `sql.js` (WebAssembly) |
+| Charts | Chart.js 4 |
+| Icons | Inline SVG (Lucide-style) |
+
+---
+
+## Project Structure
+
+```text
+Personal Finance Database/
+├── index.html     ← App shell, modals, layout
+├── style.css      ← Dark OLED design system
+├── app.js         ← Core logic: SQL, charts, UI, Settings
+├── main.js        ← Electron main process
+├── package.json   ← npm and build configuration
+├── icon.png       ← App icon
+├── demo.webp      ← Demo preview
+└── README.md      ← This file
+```
