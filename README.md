@@ -16,6 +16,7 @@ The easiest way to get started is to download the pre-built app. No installation
 2. Choose your platform:
    - **For Windows**: Download the `FinanceDB.Setup.exe` file and double-click to install.
    - **For Android**: Download the `FinanceDB.apk` file directly on your phone and tap to install it. *(You may need to allow "Installation from unknown sources" in your settings since it's not from the Google Play Store).*
+   - **For iOS (iPhone/iPad)**: Visit the live app at `https://D-L-R-Y.github.io/PersonalFinanceDB/` in Safari. Tap the **Share** button at the bottom of the screen, then select **"Add to Home Screen"**. It will install as a native-feeling app and (thanks to PWA Service Workers) will work 100% offline!
 
 ### Option 2: Build from Source (For Developers)
 If you want to modify the code or build the app yourself:
@@ -63,7 +64,7 @@ This application is fundamentally a web app packaged into a desktop executable. 
 
 1. **In-Memory Database**: Instead of running a traditional database server, the app uses `sql.js` (SQLite compiled to WebAssembly). This allows a fully functional, relational SQL database to run directly inside the app's memory.
 2. **Local Persistence**: Every time you add or delete a transaction, the app takes a snapshot of the active database and saves it directly to your computer's local storage. When you open the app again, it reloads that snapshot back into memory.
-3. **100% Offline & Private**: Because it runs entirely through Electron (which bundles a browser engine into a `.exe`), all your financial data stays securely on your device. There is no cloud sync, no tracking, and no internet connection required.
+3. **100% Offline & Private**: Whether it runs through Electron (Windows), Capacitor (Android), or as a PWA (iOS), all your financial data stays securely on your device. There is no cloud sync, no tracking, and no internet connection required after the first load.
 4. **Data Portability**: The database operates as a standard SQLite format. The "Export .db" feature lets you download your data as a real `.db` file that can be opened in any standard SQLite database viewer or imported back into the app later.
 
 ---
