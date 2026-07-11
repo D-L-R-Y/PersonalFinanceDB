@@ -82,6 +82,9 @@
 html {
   font-size: 16px;
   scroll-behavior: smooth;
+  /* Prevent any child from creating horizontal scroll */
+  overflow-x: hidden;
+  max-width: 100%;
 }
 
 body {
@@ -90,7 +93,9 @@ body {
   color: var(--color-text);
   line-height: 1.6;
   min-height: 100vh;
+  min-height: 100dvh; /* Progressive enhancement — shrinks with keyboard on modern browsers */
   overflow-x: hidden;
+  max-width: 100%;
 }
 
 /* ── Scrollbar ─────────────────────────────────────────── */
@@ -117,8 +122,12 @@ body::before {
   position: relative;
   z-index: 1;
   max-width: 1200px;
+  /* Never exceed the physical viewport — prevents OPPO X8-style side scroll */
+  width: 100%;
+  box-sizing: border-box;
   margin: 0 auto;
   padding: var(--space-6) var(--space-4);
+  overflow-x: hidden;
 }
 
 /* ── Header ────────────────────────────────────────────── */
@@ -171,6 +180,9 @@ body::before {
   align-items: center;
   gap: var(--space-3);
   flex-wrap: wrap;
+  /* Prevent header actions from forcing the page wider than the viewport */
+  min-width: 0;
+  max-width: 100%;
 }
 
 /* ── Buttons ───────────────────────────────────────────── */
@@ -326,7 +338,9 @@ body::before {
 /* ── Summary Cards ─────────────────────────────────────── */
 .summary-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  /* Use min() so the column never exceeds 100% of its container on narrow screens.
+     On OPPO X8-class (~360dp) this prevents cards from forcing horizontal scroll. */
+  grid-template-columns: repeat(auto-fit, minmax(min(160px, 100%), 1fr));
   gap: var(--space-4);
   margin-bottom: var(--space-6);
 }
@@ -342,6 +356,8 @@ body::before {
   transition: all var(--transition-normal);
   position: relative;
   overflow: hidden;
+  /* Allow cards to shrink below their content size on small screens */
+  min-width: 0;
 }
 
 .summary-card::before {
@@ -373,16 +389,21 @@ body::before {
 
 .card-value {
   font-family: var(--font-heading);
-  font-size: 1.55rem;
+  /* clamp(): 1rem minimum so it never disappears, scales up to 1.55rem */
+  font-size: clamp(0.95rem, 3.5vw, 1.55rem);
   font-weight: 700;
   letter-spacing: -0.02em;
   line-height: 1.2;
+  /* Break long monospace numbers (e.g. Rp 1.034.834.839) instead of overflowing */
+  word-break: break-all;
+  overflow-wrap: break-word;
+  min-width: 0;
 }
 
 .card-value.income  { color: var(--color-accent-light); }
 .card-value.expense { color: var(--color-destructive-light); }
 .card-value.balance { color: var(--color-secondary); }
-.card-value.top-cat { color: var(--color-warning); font-size: 1.2rem; }
+.card-value.top-cat { color: var(--color-warning); font-size: clamp(0.9rem, 3vw, 1.2rem); }
 
 .card-sub {
   font-size: 0.75rem;
@@ -456,6 +477,10 @@ body::before {
   position: relative;
   width: 100%;
   max-width: 260px;
+  /* Explicit height so Chart.js responsive mode can calculate
+     canvas dimensions correctly — without this, WebView may
+     calculate zero height and render a blank chart */
+  height: 260px;
   margin: 0 auto;
 }
 
@@ -629,13 +654,27 @@ body::before {
   backdrop-filter: blur(6px);
   -webkit-backdrop-filter: blur(6px);
   display: flex;
-  align-items: center;
+  /* Start modal at the top of the overlay so when the keyboard opens
+     and the viewport shrinks (via interactive-widget=resizes-content)
+     the modal stays fully visible and scrollable, not cut off at the bottom. */
+  align-items: flex-start;
   justify-content: center;
   z-index: 1000;
-  padding: var(--space-4);
+  /* Vertical padding accounts for status bar / safe areas */
+  padding: max(var(--space-4), env(safe-area-inset-top, 16px))
+           var(--space-4)
+           max(var(--space-4), env(safe-area-inset-bottom, 16px));
   opacity: 0;
   pointer-events: none;
   transition: opacity var(--transition-normal);
+  /* Allow the overlay itself to scroll if content is taller than the viewport */
+  overflow-y: auto;
+  overflow-x: hidden;
+  overscroll-behavior: contain;
+  /* Use dynamic viewport height so the overlay shrinks with the keyboard */
+  max-height: 100vh;   /* Fallback for WebViews without dvh support */
+  max-height: 100dvh;  /* Progressive enhancement */
+  box-sizing: border-box;
 }
 
 .modal-overlay.open {
@@ -649,10 +688,22 @@ body::before {
   border-radius: var(--radius-xl);
   padding: var(--space-8);
   width: 100%;
-  max-width: 440px;
+  /* Clamp modal width: never wider than (viewport − 32px), max 440px.
+     Fixes side-scroll on OPPO X8 and other narrow-screen devices. */
+  max-width: min(440px, calc(100vw - 32px));
   box-shadow: var(--shadow-lg);
   transform: translateY(16px) scale(0.97);
   transition: transform var(--transition-normal);
+  /* Modal scrolls internally when keyboard is open — prevents
+     content being cut off below the fold on spending popup */
+  max-height: calc(100vh - 32px);   /* Fallback */
+  max-height: calc(100dvh - 32px);  /* Progressive enhancement */
+  overflow-y: auto;
+  overflow-x: hidden;
+  overscroll-behavior: contain;
+  box-sizing: border-box;
+  /* Ensure modal never exceeds its container */
+  flex-shrink: 0;
 }
 
 .modal-overlay.open .modal {
@@ -869,6 +920,8 @@ input[type="date"].form-input {
 .summary-card:nth-child(4) { animation-delay: 0.20s; }
 
 /* ── Responsive ────────────────────────────────────────── */
+
+/* 600px — tablet-to-mobile transition */
 @media (max-width: 600px) {
   #app { padding: var(--space-4) var(--space-3); }
   .app-header { flex-direction: column; align-items: flex-start; }
@@ -877,16 +930,182 @@ input[type="date"].form-input {
   .category-grid { grid-template-columns: repeat(4, 1fr); }
   .toast-container { bottom: var(--space-4); right: var(--space-4); left: var(--space-4); }
   .toast { min-width: auto; }
+
+  /*
+   * Android WebView cannot composite <canvas> correctly inside a
+   * backdrop-filter: blur() layer — the canvas paints to an offscreen
+   * buffer that never gets merged into the visible layer tree.
+   * Fix: replace the blurred glass background with a solid opaque one.
+   */
+  .glass-card {
+    background: #1E293B;           /* solid, matches --color-surface */
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
+
+  /* Shrink the chart circle slightly on narrow screens */
+  .chart-container {
+    height: 220px;
+    max-width: 220px;
+  }
+
+  /* Ensure content grid cards are never clipped */
+  .content-grid {
+    overflow: visible;
+  }
+  .glass-card {
+    overflow: visible;
+  }
 }
 
+/* 480px — average Android phone (e.g. OPPO Find X8 ~393dp, Pixel 5 ~393dp) */
+@media (max-width: 480px) {
+  html { font-size: 15px; }
+
+  #app { padding: var(--space-3) var(--space-3); }
+
+  .app-header {
+    gap: var(--space-3);
+  }
+
+  /*
+   * Header layout on mobile — 2 rows:
+   *   Row 1: [⚙ Settings]  [Export Data | Import Data]
+   *   Row 2: [+ Add Income]  [+ Add Spending]
+   *
+   * Using explicit grid-row / grid-column placement so every button
+   * has a guaranteed slot — no overflow, no clipping.
+   */
+  .header-actions {
+    width: 100%;
+    display: grid;
+    grid-template-columns: auto 1fr; /* col1: settings icon | col2: db-controls */
+    grid-template-rows: auto auto;   /* row1: controls bar  | row2: add buttons */
+    gap: var(--space-2);
+    align-items: center;
+  }
+
+  /* ⚙ Settings: fixed square icon button — grid placement handled by .header-icon-group */
+  .btn-settings {
+    width: 38px;
+    height: 38px;
+    padding: 0;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+
+  /* Export / Import: sit in top-right, share the space equally */
+  .db-controls {
+    grid-row: 1;
+    grid-column: 2;
+    display: flex;
+    gap: var(--space-2);
+  }
+  .db-controls .btn {
+    flex: 1;
+    font-size: 0.75rem;
+    padding: var(--space-2) var(--space-2);
+    justify-content: center;
+  }
+
+  /* + Add Income: bottom-left cell */
+  #btnAddIncome {
+    grid-row: 2;
+    grid-column: 1;
+    justify-content: center;
+    width: 100%;
+  }
+
+  /* + Add Spending: bottom-right cell */
+  #btnAddSpending {
+    grid-row: 2;
+    grid-column: 2;
+    justify-content: center;
+    width: 100%;
+  }
+
+  /* Summary cards: keep 2-column but reduce padding */
+  .summary-card {
+    padding: var(--space-4) var(--space-4);
+  }
+
+  /* Modal: tighten padding on small screens */
+  .modal {
+    padding: var(--space-5) var(--space-4);
+    border-radius: var(--radius-lg);
+    max-height: calc(100vh - 24px);   /* Fallback */
+    max-height: calc(100dvh - 24px);  /* Progressive enhancement */
+  }
+
+  .modal-overlay {
+    padding: var(--space-3) var(--space-3) var(--space-3);
+  }
+
+  /* Category grid: 3 columns on narrow screens so buttons aren't tiny */
+  .category-grid {
+    grid-template-columns: repeat(3, 1fr);
+    gap: var(--space-2);
+  }
+
+  .cat-btn {
+    padding: var(--space-2) var(--space-1);
+    font-size: 0.68rem;
+  }
+
+  /* Settings modal */
+  .settings-modal {
+    padding: var(--space-5) var(--space-4) var(--space-4);
+  }
+}
+
+/* 380px — narrower phones (OPPO Find X5 Pro at 73.9mm ≈ ~360-380dp) */
 @media (max-width: 380px) {
-  .summary-grid { grid-template-columns: 1fr; }
+  html { font-size: 14px; }
+
+  .summary-grid { grid-template-columns: 1fr 1fr; }
+
+  /* Hide the subtitle on very narrow screens to save space */
+  .app-subtitle { display: none; }
+
+  /* Keep the same 2-row grid; shrink Export/Import text */
+  .db-controls .btn {
+    font-size: 0.7rem;
+    padding: var(--space-1) var(--space-2);
+  }
+
   .category-grid { grid-template-columns: repeat(3, 1fr); }
+
+  /* Reduce modal padding further */
+  .modal {
+    padding: var(--space-4) var(--space-3);
+    max-height: calc(100vh - 16px);   /* Fallback */
+    max-height: calc(100dvh - 16px);  /* Progressive enhancement */
+  }
+
+  .modal-overlay {
+    padding: var(--space-2) var(--space-2) var(--space-2);
+  }
+
+  /* Reduce transaction item padding */
+  .tx-item {
+    padding: var(--space-2) var(--space-3);
+  }
+}
+
+/* 320px — very small legacy phones */
+@media (max-width: 320px) {
+  .summary-grid { grid-template-columns: 1fr; }
+  .category-grid { grid-template-columns: repeat(2, 1fr); }
+  /* Stack Export/Import vertically on tiny screens */
+  .db-controls {
+    flex-direction: column;
+  }
 }
 
 /* ── Settings Modal ────────────────────────────────────────── */
 .settings-modal {
-  max-width: 520px;
+  /* Clamp width so it never causes horizontal scroll on narrow screens */
+  max-width: min(520px, calc(100vw - 32px));
   padding: var(--space-8) var(--space-8) var(--space-6);
 }
 
@@ -1047,6 +1266,13 @@ input[type="date"].form-input {
   margin-bottom: var(--space-3);
 }
 
+/* Calculator + Settings icon group — always flex so buttons sit side by side */
+.header-icon-group {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
 /* Gear button in header */
 .btn-settings {
   background: var(--color-surface);
@@ -1062,6 +1288,211 @@ input[type="date"].form-input {
 .btn-settings:hover {
   border-color: var(--color-border-hover);
   color: var(--color-text);
+}
+
+/* ── Calculator ─────────────────────────────────────────── */
+
+/* Header calc button — same shape as gear, with accent tint */
+.btn-header-calc {
+  color: var(--color-secondary);
+  border-color: rgba(59, 130, 246, 0.25);
+}
+.btn-header-calc:hover {
+  background: rgba(59, 130, 246, 0.1);
+  border-color: var(--color-secondary);
+  color: var(--color-secondary);
+}
+
+/* Amount row: label + "Calculator" toggle side by side */
+.amount-label-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+/* Small pill-shaped toggle inside the form */
+.btn-calc-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  border-radius: var(--radius-full);
+  border: 1px solid rgba(59, 130, 246, 0.3);
+  background: rgba(59, 130, 246, 0.08);
+  color: var(--color-secondary);
+  font-family: var(--font-body);
+  font-size: 0.72rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--transition-normal);
+}
+.btn-calc-toggle:hover {
+  background: rgba(59, 130, 246, 0.18);
+  border-color: var(--color-secondary);
+}
+.btn-calc-toggle.active {
+  background: rgba(59, 130, 246, 0.2);
+  border-color: var(--color-secondary);
+  box-shadow: 0 0 10px rgba(59, 130, 246, 0.25);
+}
+
+/* Inline calculator wrapper inside the form */
+.inline-calc {
+  background: var(--color-bg-elevated);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-4);
+  margin-top: var(--space-2);
+  animation: fadeInUp 0.2s ease both;
+}
+
+/* Floating calculator modal — narrower than default */
+.floating-calc-modal {
+  max-width: min(320px, calc(100vw - 32px));
+}
+
+/* Display area */
+.calc-display-row {
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: var(--space-3) var(--space-4);
+  margin-bottom: var(--space-3);
+  min-height: 70px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  justify-content: space-between;
+  overflow: hidden;
+}
+
+.calc-expr {
+  font-family: var(--font-heading);
+  font-size: 0.72rem;
+  color: var(--color-text-dim);
+  word-break: break-all;
+  text-align: right;
+  min-height: 16px;
+}
+
+.calc-result {
+  font-family: var(--font-heading);
+  font-size: 1.6rem;
+  font-weight: 700;
+  color: var(--color-text);
+  letter-spacing: -0.02em;
+  word-break: break-all;
+  text-align: right;
+  transition: color var(--transition-fast);
+}
+.calc-result.has-result { color: var(--color-secondary); }
+
+/* Button grid */
+.calc-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+}
+
+.calc-btn {
+  aspect-ratio: 1;
+  border: none;
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  color: var(--color-text);
+  font-family: var(--font-heading);
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 52px;
+  border: 1px solid var(--color-border);
+}
+
+.calc-btn:hover {
+  background: var(--color-surface-2);
+  border-color: var(--color-border-hover);
+  transform: scale(1.04);
+}
+.calc-btn:active {
+  transform: scale(0.97);
+}
+
+/* Function keys (C, ±, %) */
+.calc-btn.calc-fn {
+  background: rgba(148, 163, 184, 0.1);
+  color: var(--color-text-muted);
+  border-color: rgba(148, 163, 184, 0.15);
+}
+.calc-btn.calc-fn:hover {
+  background: rgba(148, 163, 184, 0.2);
+  color: var(--color-text);
+}
+
+/* Operator keys (÷, ×, −, +) */
+.calc-btn.calc-op {
+  background: rgba(30, 64, 175, 0.15);
+  color: var(--color-secondary);
+  border-color: rgba(59, 130, 246, 0.25);
+}
+.calc-btn.calc-op:hover {
+  background: rgba(30, 64, 175, 0.28);
+  border-color: var(--color-secondary);
+}
+.calc-btn.calc-op.active-op {
+  background: rgba(59, 130, 246, 0.3);
+  border-color: var(--color-secondary);
+  box-shadow: 0 0 12px rgba(59, 130, 246, 0.3);
+}
+
+/* Equals key */
+.calc-btn.calc-equals {
+  background: linear-gradient(135deg, var(--color-primary), var(--color-secondary));
+  color: white;
+  border-color: transparent;
+  box-shadow: var(--shadow-glow-primary);
+}
+.calc-btn.calc-equals:hover {
+  filter: brightness(1.12);
+  box-shadow: 0 0 20px var(--color-primary-glow);
+}
+
+/* Zero button spans 2 cols — override aspect-ratio */
+.calc-btn[data-calc="0"] {
+  aspect-ratio: unset;
+  grid-column: span 2;
+  justify-content: flex-start;
+  padding-left: var(--space-5);
+}
+
+/* Responsive calc adjustments on mobile */
+@media (max-width: 480px) {
+  .calc-btn { min-height: 46px; font-size: 0.95rem; }
+  .calc-grid { gap: 6px; }
+  .calc-result { font-size: 1.3rem; }
+}
+
+/* Mobile header layout — the icon group (calc + gear) sits in row1, col1.
+   This replaces the earlier per-button grid overrides. */
+@media (max-width: 480px) {
+  .header-icon-group {
+    grid-row: 1;
+    grid-column: 1;
+    display: flex;
+    gap: var(--space-2);
+    align-items: center;
+  }
+
+  #btnHeaderCalc,
+  #btnSettings {
+    width: 36px;
+    height: 36px;
+    padding: 0;
+    justify-content: center;
+  }
 }
 
 /* ── Reduced Motion ────────────────────────────────────── */

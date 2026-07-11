@@ -1,7 +1,7 @@
 {
   "name": "financedb",
   "productName": "FinanceDB",
-  "version": "1.0.1",
+  "version": "1.1.0",
   "description": "Personal finance tracker with a real SQLite database",
   "main": "main.js",
   "author": "FinanceDB",
@@ -9,7 +9,9 @@
   "private": true,
   "scripts": {
     "start": "electron .",
-    "build": "electron-builder --win"
+    "build": "electron-builder --win",
+    "sync": "powershell -ExecutionPolicy Bypass -File .\\sync-to-android.ps1",
+    "sync:files": "powershell -ExecutionPolicy Bypass -File .\\sync-to-android.ps1 -SkipCapSync"
   },
   "devDependencies": {
     "electron": "^31.0.0",

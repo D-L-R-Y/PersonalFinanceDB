@@ -31,10 +31,17 @@
       </div>
 
       <div class="header-actions">
-        <!-- Settings gear -->
-        <button id="btnSettings" class="btn-settings" title="Settings" aria-label="Open settings">
-          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
-        </button>
+        <!-- Calculator + Settings icon group -->
+        <div class="header-icon-group">
+          <button id="btnHeaderCalc" class="btn-settings btn-header-calc" title="Calculator" aria-label="Open calculator">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="2" width="16" height="20" rx="2"/><line x1="8" y1="6" x2="16" y2="6"/><line x1="8" y1="10" x2="8" y2="10"/><line x1="12" y1="10" x2="12" y2="10"/><line x1="16" y1="10" x2="16" y2="10"/><line x1="8" y1="14" x2="8" y2="14"/><line x1="12" y1="14" x2="12" y2="14"/><line x1="16" y1="14" x2="16" y2="14"/><line x1="8" y1="18" x2="8" y2="18"/><line x1="12" y1="18" x2="12" y2="18"/><line x1="16" y1="18" x2="16" y2="18"/></svg>
+          </button>
+          <!-- Settings gear -->
+          <button id="btnSettings" class="btn-settings" title="Settings" aria-label="Open settings">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+          </button>
+        </div><!-- /header-icon-group -->
+
         <div class="db-controls">
           <button id="btnExportMenu" class="btn btn-ghost btn-sm" title="Export Data">
             <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
@@ -160,10 +167,49 @@
       <form id="formSpending" novalidate>
         <!-- Amount -->
         <div class="form-group">
-          <label class="form-label" for="spendAmount">Amount</label>
-          <div class="input-wrapper">
+          <div class="amount-label-row">
+            <label class="form-label" for="spendAmount">Amount</label>
+            <button type="button" id="btnSpendCalcToggle" class="btn-calc-toggle" title="Use calculator">
+              <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="2" width="16" height="20" rx="2"/><line x1="8" y1="6" x2="16" y2="6"/><line x1="8" y1="10" x2="8" y2="10"/><line x1="12" y1="10" x2="12" y2="10"/><line x1="16" y1="10" x2="16" y2="10"/><line x1="8" y1="14" x2="8" y2="14"/><line x1="12" y1="14" x2="12" y2="14"/><line x1="16" y1="14" x2="16" y2="14"/><line x1="8" y1="18" x2="8" y2="18"/><line x1="12" y1="18" x2="12" y2="18"/><line x1="16" y1="18" x2="16" y2="18"/></svg>
+              Calculator
+            </button>
+          </div>
+          <div class="input-wrapper" id="spendAmountInputWrap">
             <span class="input-prefix">Rp</span>
             <input type="text" inputmode="numeric" id="spendAmount" class="form-input has-prefix" placeholder="0" required autocomplete="off" />
+          </div>
+          <!-- Inline calculator (hidden by default) -->
+          <div id="spendInlineCalc" class="inline-calc" style="display:none;">
+            <div class="calc-display-row">
+              <div class="calc-expr" id="spendCalcExpr"></div>
+              <div class="calc-result" id="spendCalcResult">0</div>
+            </div>
+            <div class="calc-grid">
+              <button type="button" class="calc-btn calc-fn" data-calc="C">C</button>
+              <button type="button" class="calc-btn calc-fn" data-calc="±">±</button>
+              <button type="button" class="calc-btn calc-fn" data-calc="%">%</button>
+              <button type="button" class="calc-btn calc-op" data-calc="/">÷</button>
+
+              <button type="button" class="calc-btn" data-calc="7">7</button>
+              <button type="button" class="calc-btn" data-calc="8">8</button>
+              <button type="button" class="calc-btn" data-calc="9">9</button>
+              <button type="button" class="calc-btn calc-op" data-calc="*">×</button>
+
+              <button type="button" class="calc-btn" data-calc="4">4</button>
+              <button type="button" class="calc-btn" data-calc="5">5</button>
+              <button type="button" class="calc-btn" data-calc="6">6</button>
+              <button type="button" class="calc-btn calc-op" data-calc="-">−</button>
+
+              <button type="button" class="calc-btn" data-calc="1">1</button>
+              <button type="button" class="calc-btn" data-calc="2">2</button>
+              <button type="button" class="calc-btn" data-calc="3">3</button>
+              <button type="button" class="calc-btn calc-op" data-calc="+">+</button>
+
+              <button type="button" class="calc-btn" data-calc="0" style="grid-column:span 2;">0</button>
+              <button type="button" class="calc-btn" data-calc=".">.</button>
+              <button type="button" class="calc-btn calc-equals" data-calc="=" id="spendCalcEquals">=</button>
+            </div>
+            <button type="button" class="btn btn-primary btn-sm" id="btnSpendCalcUse" style="width:100%;margin-top:8px;justify-content:center;">Use this amount</button>
           </div>
         </div>
 
@@ -381,7 +427,66 @@
   <!-- ── Toast Container ───────────────────────────────── -->
   <div class="toast-container" id="toastContainer" aria-live="polite"></div>
 
+  <!-- ────────────────────────────────────────────────────── -->
+  <!--  FLOATING CALCULATOR                                   -->
+  <!-- ────────────────────────────────────────────────────── -->
+  <div id="floatingCalcOverlay" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="floatingCalcTitle">
+    <div class="modal floating-calc-modal">
+      <div class="modal-header">
+        <span class="modal-title" id="floatingCalcTitle">Calculator</span>
+        <button class="modal-close" id="closeFloatingCalc" aria-label="Close">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+      <div class="calc-display-row">
+        <div class="calc-expr" id="floatCalcExpr"></div>
+        <div class="calc-result" id="floatCalcResult">0</div>
+      </div>
+      <div class="calc-grid">
+        <button type="button" class="calc-btn calc-fn" data-calc="C">C</button>
+        <button type="button" class="calc-btn calc-fn" data-calc="±">±</button>
+        <button type="button" class="calc-btn calc-fn" data-calc="%">%</button>
+        <button type="button" class="calc-btn calc-op" data-calc="/">÷</button>
+
+        <button type="button" class="calc-btn" data-calc="7">7</button>
+        <button type="button" class="calc-btn" data-calc="8">8</button>
+        <button type="button" class="calc-btn" data-calc="9">9</button>
+        <button type="button" class="calc-btn calc-op" data-calc="*">×</button>
+
+        <button type="button" class="calc-btn" data-calc="4">4</button>
+        <button type="button" class="calc-btn" data-calc="5">5</button>
+        <button type="button" class="calc-btn" data-calc="6">6</button>
+        <button type="button" class="calc-btn calc-op" data-calc="-">−</button>
+
+        <button type="button" class="calc-btn" data-calc="1">1</button>
+        <button type="button" class="calc-btn" data-calc="2">2</button>
+        <button type="button" class="calc-btn" data-calc="3">3</button>
+        <button type="button" class="calc-btn calc-op" data-calc="+">+</button>
+
+        <button type="button" class="calc-btn" data-calc="0" style="grid-column:span 2;">0</button>
+        <button type="button" class="calc-btn" data-calc=".">.</button>
+        <button type="button" class="calc-btn calc-equals" data-calc="=">=</button>
+      </div>
+    </div>
+  </div>
+
 
   <script src="app.js"></script>
+
+  <!-- Keyboard scroll fix for Android WebView:
+       When a focused input is covered by the soft keyboard, scroll it into view. -->
+  <script>
+    (function () {
+      var inputs = 'input, textarea, select';
+      document.addEventListener('focusin', function (e) {
+        var el = e.target;
+        if (!el.matches(inputs)) return;
+        // Give the keyboard time to open (~300 ms) then scroll the element into view
+        setTimeout(function () {
+          el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }, 320);
+      });
+    })();
+  </script>
 </body>
 </html>

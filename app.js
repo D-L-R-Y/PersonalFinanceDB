@@ -451,6 +451,9 @@ function renderChart(categories, totalExpense) {
     },
     options: {
       responsive: true,
+      // Use the explicit container height (set in CSS) rather than
+      // computing aspect ratio — prevents zero-height on Android WebView
+      maintainAspectRatio: false,
       cutout: '68%',
       plugins: {
         legend: { display: false },
@@ -827,6 +830,277 @@ function importJSON(file) {
   reader.readAsText(file);
 }
 
+// ── Calculator Engine ─────────────────────────────────────
+
+function makeCalcState() {
+  return {
+    currentExpr: '',
+    displayVal:  '0',
+    lastResult:  null,
+    justEvaled:  false,
+    pendingOp:   null,
+  };
+}
+
+function calcInput(key, inst) {
+  const { exprEl, resultEl } = inst;
+  const st = inst.st;
+
+  if (key === 'C') {
+    st.currentExpr = '';
+    st.displayVal  = '0';
+    st.lastResult  = null;
+    st.justEvaled  = false;
+    st.pendingOp   = null;
+    resultEl.textContent = '0';
+    resultEl.classList.remove('has-result');
+    exprEl.textContent   = '';
+    return;
+  }
+
+  if (key === '±') {
+    const n = parseFloat(st.displayVal);
+    if (!isNaN(n) && n !== 0) {
+      st.displayVal = String(-n);
+      resultEl.textContent = formatCalcDisplay(st.displayVal);
+    }
+    return;
+  }
+
+  if (key === '%') {
+    const n = parseFloat(st.displayVal);
+    if (!isNaN(n)) {
+      st.displayVal = String(n / 100);
+      resultEl.textContent = formatCalcDisplay(st.displayVal);
+    }
+    return;
+  }
+
+  const isOp = ['+', '-', '*', '/'].includes(key);
+
+  if (key === '=') {
+    if (!st.currentExpr) return;
+    const expr = st.currentExpr + st.displayVal;
+    exprEl.textContent = expr + ' =';
+    try {
+      const result = calcEval(expr);
+      if (!isFinite(result)) throw new Error('inf');
+      const rounded = parseFloat(result.toFixed(10));
+      st.displayVal  = String(rounded);
+      st.lastResult  = rounded;
+      st.currentExpr = '';
+      st.justEvaled  = true;
+      resultEl.textContent = formatCalcDisplay(st.displayVal);
+      resultEl.classList.add('has-result');
+    } catch(e) {
+      resultEl.textContent = 'Error';
+      st.displayVal = '0';
+      st.currentExpr = '';
+    }
+    return;
+  }
+
+  if (isOp) {
+    resultEl.classList.remove('has-result');
+    if (st.justEvaled) {
+      st.currentExpr = st.displayVal + ' ' + key + ' ';
+      st.justEvaled = false;
+    } else {
+      st.currentExpr = (st.currentExpr || '') + st.displayVal + ' ' + key + ' ';
+    }
+    exprEl.textContent = st.currentExpr;
+    st.displayVal = '0';
+    st.pendingOp = key;
+    return;
+  }
+
+  // Digit or decimal point
+  resultEl.classList.remove('has-result');
+  if (st.justEvaled) {
+    st.displayVal  = '';
+    st.justEvaled  = false;
+    st.currentExpr = '';
+  }
+
+  if (key === '.') {
+    if (st.displayVal.includes('.')) return;
+    st.displayVal += '.';
+  } else {
+    if (st.displayVal === '0') {
+      st.displayVal = key;
+    } else {
+      if (st.displayVal.replace(/[^\d]/g, '').length >= 15) return;
+      st.displayVal += key;
+    }
+  }
+  resultEl.textContent = formatCalcDisplay(st.displayVal);
+}
+
+/**
+ * CSP-safe arithmetic evaluator — no eval / new Function.
+ * Handles +, -, *, / with correct precedence.
+ */
+function calcEval(expr) {
+  // Tokenise the expression into numbers and operators
+  const tokens = [];
+  let i = 0;
+  while (i < expr.length) {
+    const ch = expr[i];
+    if (ch === ' ') { i++; continue; }
+    if ('+-*/'.includes(ch)) {
+      tokens.push(ch);
+      i++;
+    } else if ((ch >= '0' && ch <= '9') || ch === '.') {
+      let num = '';
+      while (i < expr.length && ((expr[i] >= '0' && expr[i] <= '9') || expr[i] === '.')) {
+        num += expr[i++];
+      }
+      tokens.push(parseFloat(num));
+    } else {
+      i++; // skip unknown chars
+    }
+  }
+
+  if (tokens.length === 0) throw new Error('empty');
+
+  // First pass: * and /
+  let nums = [];
+  let ops  = [];
+  // Split interleaved [num, op, num, op, ...] into separate arrays
+  for (let k = 0; k < tokens.length; k++) {
+    if (typeof tokens[k] === 'number') nums.push(tokens[k]);
+    else ops.push(tokens[k]);
+  }
+  if (nums.length === 0) throw new Error('no numbers');
+
+  // Apply * / first
+  let ni = 0;
+  while (ni < ops.length) {
+    if (ops[ni] === '*' || ops[ni] === '/') {
+      const r = ops[ni] === '*' ? nums[ni] * nums[ni+1] : nums[ni] / nums[ni+1];
+      nums.splice(ni, 2, r);
+      ops.splice(ni, 1);
+    } else {
+      ni++;
+    }
+  }
+
+  // Apply + - left to right
+  let result = nums[0];
+  for (let oi = 0; oi < ops.length; oi++) {
+    result = ops[oi] === '+' ? result + nums[oi+1] : result - nums[oi+1];
+  }
+  return result;
+}
+
+function formatCalcDisplay(val) {
+  if (val === '' || val === '-') return val || '0';
+  const n = parseFloat(val);
+  if (isNaN(n)) return val;
+  if (val.endsWith('.')) {
+    const intPart = parseInt(val, 10);
+    return (isNaN(intPart) ? '0' : intPart.toLocaleString('id-ID')) + ',';
+  }
+  const parts = String(n).split('.');
+  const intStr = parseInt(parts[0], 10).toLocaleString('id-ID');
+  return parts.length > 1 ? intStr + ',' + parts[1] : intStr;
+}
+
+function bindCalcButtons(container, inst) {
+  if (!container) return;
+  container.querySelectorAll('.calc-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      calcInput(btn.dataset.calc, inst);
+      container.querySelectorAll('.calc-btn.calc-op').forEach(b => b.classList.remove('active-op'));
+      if (['+', '-', '*', '/'].includes(btn.dataset.calc)) {
+        btn.classList.add('active-op');
+      }
+    });
+  });
+}
+
+
+function setupCalculators() {
+  // ── 1. Inline calculator inside the Spending form ──────
+  const spendInst = {
+    exprEl:    document.getElementById('spendCalcExpr'),
+    resultEl:  document.getElementById('spendCalcResult'),
+    st:        makeCalcState(),
+  };
+  bindCalcButtons(document.getElementById('spendInlineCalc'), spendInst);
+
+  // Toggle show/hide
+  const toggleBtn   = document.getElementById('btnSpendCalcToggle');
+  const inlineCalc  = document.getElementById('spendInlineCalc');
+  const amtWrap     = document.getElementById('spendAmountInputWrap');
+  const amtInput    = document.getElementById('spendAmount');
+
+  toggleBtn.addEventListener('click', () => {
+    const open = inlineCalc.style.display === 'none' || inlineCalc.style.display === '';
+    if (open) {
+      inlineCalc.style.display = 'block';
+      amtWrap.style.display    = 'none';
+      toggleBtn.classList.add('active');
+      toggleBtn.textContent = '';
+      // Re-add the SVG icon + new text
+      toggleBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="2" width="16" height="20" rx="2"/><line x1="8" y1="6" x2="16" y2="6"/></svg> Direct input`;
+    } else {
+      inlineCalc.style.display = 'none';
+      amtWrap.style.display    = '';
+      toggleBtn.classList.remove('active');
+      toggleBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="2" width="16" height="20" rx="2"/><line x1="8" y1="6" x2="16" y2="6"/><line x1="8" y1="10" x2="8" y2="10"/><line x1="12" y1="10" x2="12" y2="10"/><line x1="16" y1="10" x2="16" y2="10"/><line x1="8" y1="14" x2="8" y2="14"/><line x1="12" y1="14" x2="12" y2="14"/><line x1="16" y1="14" x2="16" y2="14"/><line x1="8" y1="18" x2="8" y2="18"/><line x1="12" y1="18" x2="12" y2="18"/><line x1="16" y1="18" x2="16" y2="18"/></svg> Calculator`;
+    }
+  });
+
+  // "Use this amount" copies the result to the amount input
+  document.getElementById('btnSpendCalcUse').addEventListener('click', () => {
+    const raw = spendInst.st.displayVal;
+    const n   = parseFloat(raw);
+    if (isNaN(n) || n <= 0) {
+      showToast('Please calculate a valid amount first.', 'error');
+      return;
+    }
+    const rounded = Math.round(n);
+    // Put the rounded integer into the amount field (formatted)
+    amtInput.value = rounded.toLocaleString('id-ID');
+    // Switch back to direct input view
+    inlineCalc.style.display = 'none';
+    amtWrap.style.display    = '';
+    toggleBtn.classList.remove('active');
+    toggleBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="2" width="16" height="20" rx="2"/><line x1="8" y1="6" x2="16" y2="6"/><line x1="8" y1="10" x2="8" y2="10"/><line x1="12" y1="10" x2="12" y2="10"/><line x1="16" y1="10" x2="16" y2="10"/><line x1="8" y1="14" x2="8" y2="14"/><line x1="12" y1="14" x2="12" y2="14"/><line x1="16" y1="14" x2="16" y2="14"/><line x1="8" y1="18" x2="8" y2="18"/><line x1="12" y1="18" x2="12" y2="18"/><line x1="16" y1="18" x2="16" y2="18"/></svg> Calculator`;
+    showToast(`Amount set to ${formatRp(rounded)}`, 'success');
+    // Reset the inline calc for next time
+    calcInput('C', spendInst);
+  });
+
+  // Reset inline calc whenever the spending modal closes
+  document.getElementById('closeSpending').addEventListener('click', () => {
+    calcInput('C', spendInst);
+    inlineCalc.style.display = 'none';
+    amtWrap.style.display    = '';
+    toggleBtn.classList.remove('active');
+    toggleBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="2" width="16" height="20" rx="2"/><line x1="8" y1="6" x2="16" y2="6"/><line x1="8" y1="10" x2="8" y2="10"/><line x1="12" y1="10" x2="12" y2="10"/><line x1="16" y1="10" x2="16" y2="10"/><line x1="8" y1="14" x2="8" y2="14"/><line x1="12" y1="14" x2="12" y2="14"/><line x1="16" y1="14" x2="16" y2="14"/><line x1="8" y1="18" x2="8" y2="18"/><line x1="12" y1="18" x2="12" y2="18"/><line x1="16" y1="18" x2="16" y2="18"/></svg> Calculator`;
+  }, { capture: true });
+
+  // ── 2. Floating standalone calculator ─────────────────
+  const floatInst = {
+    exprEl:   document.getElementById('floatCalcExpr'),
+    resultEl: document.getElementById('floatCalcResult'),
+    st:       makeCalcState(),
+  };
+  bindCalcButtons(document.getElementById('floatingCalcOverlay'), floatInst);
+
+  document.getElementById('btnHeaderCalc').addEventListener('click', () => {
+    openModal('floatingCalcOverlay');
+  });
+  document.getElementById('closeFloatingCalc').addEventListener('click', () => {
+    closeModal('floatingCalcOverlay');
+  });
+  document.getElementById('floatingCalcOverlay').addEventListener('click', e => {
+    if (e.target === e.currentTarget) closeModal('floatingCalcOverlay');
+  });
+}
+
 // ── Form Validation & Submission ───────────────────────────
 function setupForms() {
 
@@ -946,6 +1220,7 @@ function setupEventListeners() {
       closeModal('modalIncome');
       closeModal('modalDelete');
       closeModal('modalSettings');
+      closeModal('floatingCalcOverlay');
       pendingDeleteId = null;
     }
   });
@@ -1050,22 +1325,30 @@ function setupEventListeners() {
 
 // ── Bootstrap ──────────────────────────────────────────────
 async function main() {
+  // ── Phase 1: UI setup — always runs, DB-independent ──
+  loadSettings();
+  applySettings();
+  buildCategoryGrid();
+  setupAmountFormatting('spendAmount');
+  setupAmountFormatting('incomeAmount');
+  setupForms();
+  setupEventListeners();
+  try { setupCalculators(); } catch (calcErr) {
+    console.error('Calculator init failed (non-fatal):', calcErr);
+  }
+
+  // ── Phase 2: Database — failure shows error but keeps UI alive ──
   try {
-    loadSettings();          // 1. Load settings first (currency, categories, name)
-    applySettings();         // 2. Apply name to header
-    await initDB();          // 3. Init SQLite
-    buildCategoryGrid();     // 4. Build category picker with live settings
-    setupAmountFormatting('spendAmount');
-    setupAmountFormatting('incomeAmount');
-    setupForms();
-    setupEventListeners();   // includes settings listeners
+    await initDB();
     renderDashboard();
   } catch (err) {
     console.error('Failed to initialize database:', err);
     document.getElementById('app').insertAdjacentHTML('afterbegin', `
       <div style="background:rgba(220,38,38,0.1);border:1px solid rgba(220,38,38,0.3);
                   border-radius:12px;padding:16px 20px;margin-bottom:20px;color:#EF4444;font-size:0.85rem;">
-        <strong>Database error:</strong> Could not load sql.js. Make sure you're connected to the internet.
+        <strong>Database error:</strong> Could not load sql.js.
+        Try opening the app via the Electron launcher instead of directly in a browser,
+        or use a local web server (e.g. <code>npx serve .</code>).
       </div>
     `);
   }
