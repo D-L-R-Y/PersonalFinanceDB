@@ -1,6 +1,6 @@
 # Personal Finance Database
 
-A modern, standalone personal finance tracker running as a desktop app, powered by a real **SQLite database** stored entirely on your local machine.
+A modern, offline-first personal finance tracker for **Windows, Android, and iOS**, powered by a real **SQLite database** stored entirely on your local machine.
 
 <img width="929" height="977" alt="demo" src="https://github.com/user-attachments/assets/46008b44-0088-4444-ac1b-d81b9106dd51" />
 
@@ -36,8 +36,7 @@ To test the app locally without building the `.exe`:
 npm install
 npm start
 ```
-
-Since the core uses Web technologies, you can still just double-click `index.html` in your file explorer to open it in Chrome/Edge, though the desktop app provides a more integrated experience.
+Since the core uses standard Web technologies, you can also just double-click `index.html` in your file explorer to open it in any browser, or host it on GitHub Pages as a PWA.
 
 ---
 
@@ -46,6 +45,7 @@ Since the core uses Web technologies, you can still just double-click `index.htm
 | Feature | Description |
 |---|---|
 | 📊 Dashboard | Summary cards + donut chart of spending by category |
+| 🧮 Calculator | Built-in arithmetic evaluator for splitting bills and calculating exact cuts inline |
 | ⚙️ Custom Settings | Personalize your app headline, currency symbol, and category colors/names |
 | ➕ Add Spending | Log expenses with customized categories |
 | ➕ Add Income | Log income |
@@ -60,7 +60,7 @@ Since the core uses Web technologies, you can still just double-click `index.htm
 
 ## How It Works
 
-This application is fundamentally a web app packaged into a desktop executable. Here is how the pieces fit together:
+This application is fundamentally a web app packaged natively for multiple platforms (Electron for Windows, Capacitor for Android, PWA for iOS). Here is how the pieces fit together:
 
 1. **In-Memory Database**: Instead of running a traditional database server, the app uses `sql.js` (SQLite compiled to WebAssembly). This allows a fully functional, relational SQL database to run directly inside the app's memory.
 2. **Local Persistence**: Every time you add or delete a transaction, the app takes a snapshot of the active database and saves it directly to your computer's local storage. When you open the app again, it reloads that snapshot back into memory.
@@ -74,6 +74,7 @@ This application is fundamentally a web app packaged into a desktop executable. 
 | Layer | Technology |
 |---|---|
 | Desktop Framework| Electron + electron-builder |
+| Mobile Framework | Capacitor (Android) / PWA Service Workers (iOS) |
 | UI | HTML5 + Vanilla CSS + JavaScript (ES6+) |
 | Database | SQLite via `sql.js` (WebAssembly) |
 | Charts | Chart.js 4 |
