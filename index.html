@@ -5,6 +5,12 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Personal Finance Database</title>
   <meta name="description" content="Personal finance tracker with SQL database — track income, expenses, and spending categories with an interactive dashboard." />
+  
+  <!-- PWA Setup -->
+  <link rel="manifest" href="manifest.json" />
+  <meta name="theme-color" content="#0f172a" />
+  <link rel="apple-touch-icon" href="icon.png" />
+
   <link rel="stylesheet" href="style.css" />
   <!-- sql.js (SQLite in WebAssembly) -->
   <script src="vendor/sql-wasm.js"></script>
@@ -487,6 +493,17 @@
         }, 320);
       });
     })();
+  </script>
+
+  <!-- Register PWA Service Worker -->
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./serviceworker.js')
+          .then(reg => console.log('Service Worker registered!', reg))
+          .catch(err => console.error('Service Worker registration failed: ', err));
+      });
+    }
   </script>
 </body>
 </html>
