@@ -110,7 +110,17 @@ body {
 
 /* Hide scrollbar on mobile devices for a cleaner PWA experience */
 @media (max-width: 900px) {
-  ::-webkit-scrollbar { display: none; }
+  * {
+    scrollbar-width: none !important;
+    -ms-overflow-style: none !important;
+  }
+  *::-webkit-scrollbar {
+    display: none !important;
+    width: 0 !important;
+    height: 0 !important;
+    background: transparent !important;
+    -webkit-appearance: none !important;
+  }
 }
 
 /* ── Background Grid Texture ───────────────────────────── */
