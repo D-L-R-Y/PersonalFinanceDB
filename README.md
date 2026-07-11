@@ -10,11 +10,12 @@ A modern, standalone personal finance tracker running as a desktop app, powered 
 ## How to Install and Run
 
 ### Option 1: Direct Download (Recommended)
-The easiest way to get started is to download the pre-built desktop app. No installation or coding experience required.
+The easiest way to get started is to download the pre-built app. No installation or coding experience required.
 
 1. Go to the [Releases](../../releases/latest) page.
-2. Download the `FinanceDB Setup.exe` file.
-3. Double-click the downloaded file to install and run the app.
+2. Choose your platform:
+   - **For Windows**: Download the `FinanceDB.Setup.exe` file and double-click to install.
+   - **For Android**: Download the `FinanceDB.apk` file directly on your phone and tap to install it. *(You may need to allow "Installation from unknown sources" in your settings since it's not from the Google Play Store).*
 
 ### Option 2: Build from Source (For Developers)
 If you want to modify the code or build the app yourself:
