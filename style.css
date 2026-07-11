@@ -662,6 +662,10 @@ body::before {
 .tx-item:hover .tx-delete { opacity: 1; }
 .tx-delete:hover { color: var(--color-destructive-light); }
 
+@media (max-width: 900px) {
+  .tx-delete { opacity: 1; }
+}
+
 .empty-state {
   text-align: center;
   padding: var(--space-10) var(--space-6);
