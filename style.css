@@ -108,6 +108,11 @@ body {
 ::-webkit-scrollbar-thumb { background: var(--color-surface-2); border-radius: var(--radius-full); }
 ::-webkit-scrollbar-thumb:hover { background: var(--color-text-dim); }
 
+/* Hide scrollbar on mobile devices for a cleaner PWA experience */
+@media (max-width: 900px) {
+  ::-webkit-scrollbar { display: none; }
+}
+
 /* ── Background Grid Texture ───────────────────────────── */
 body::before {
   content: '';
