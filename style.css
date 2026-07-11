@@ -432,7 +432,7 @@ body::before {
 }
 
 @media (max-width: 900px) {
-  .content-grid { grid-template-columns: 1fr; }
+  .content-grid { grid-template-columns: minmax(0, 1fr); }
 }
 
 /* ── Glass Card ────────────────────────────────────────── */
@@ -448,6 +448,9 @@ body::before {
   border-radius: var(--radius-xl);
   padding: var(--space-6);
   transition: border-color var(--transition-normal);
+  
+  /* Prevent flex/grid blowout on small screens */
+  min-width: 0;
 }
 .glass-card:hover { border-color: var(--color-border-hover); }
 
@@ -456,6 +459,8 @@ body::before {
   align-items: center;
   justify-content: space-between;
   margin-bottom: var(--space-5);
+  gap: var(--space-3);
+  flex-wrap: wrap;
 }
 
 .card-title {
