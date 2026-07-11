@@ -96,6 +96,10 @@ body {
   min-height: 100dvh; /* Progressive enhancement — shrinks with keyboard on modern browsers */
   overflow-x: hidden;
   max-width: 100%;
+  
+  /* Prevent zooming on mobile/PWA */
+  touch-action: manipulation;
+  -webkit-text-size-adjust: 100%;
 }
 
 /* ── Scrollbar ─────────────────────────────────────────── */
