@@ -11,3 +11,7 @@ design-system/
 
 # Chrome isolated profile for file:// WASM access
 .chrome-profile/
+
+# Local Android Sync Scripts
+Sync to Android.bat
+sync-to-android.ps1
