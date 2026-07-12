@@ -40,6 +40,10 @@ let pendingDeleteId   = null;
 let pendingDeleteLabel = '';
 let settings = { ...DEFAULT_SETTINGS };  // active settings object
 
+// Transaction pagination state
+const TX_PAGE_SIZE = 10;
+let txOffset = 0;   // how many are currently shown
+
 // Helper: get live category list (user's or default)
 function getCategories() {
   return (settings.categories && settings.categories.length > 0)
@@ -312,19 +316,29 @@ function queryCategoryBreakdown(where) {
   return res[0].values.map(r => ({ category: r[0], total: r[1] }));
 }
 
-function queryRecentTransactions(where) {
+function queryRecentTransactions(where, limit = TX_PAGE_SIZE, offset = 0) {
+  if (!db) return [];
   const res = db.exec(
     `SELECT id, type, amount, category, note, date
      FROM transactions
      ${where ? 'WHERE ' + where.replace('AND','').trim() : ''}
      ORDER BY date DESC, id DESC
-     LIMIT 20`
+     LIMIT ${limit} OFFSET ${offset}`
   );
   if (!res.length) return [];
   return res[0].values.map(r => ({
     id: r[0], type: r[1], amount: r[2],
     category: r[3], note: r[4], date: r[5]
   }));
+}
+
+function countTransactions(where) {
+  if (!db) return 0;
+  const res = db.exec(
+    `SELECT COUNT(*) FROM transactions
+     ${where ? 'WHERE ' + where.replace('AND','').trim() : ''}`
+  );
+  return res.length ? res[0].values[0][0] : 0;
 }
 
 // ── Build WHERE clause ─────────────────────────────────────
@@ -345,7 +359,10 @@ function renderDashboard() {
   const where      = buildWhere();
   const summary    = querySummary(where);
   const categories = queryCategoryBreakdown(where);
-  const txs        = queryRecentTransactions(where);
+
+  // Load ALL transactions for the period into the scrollable container
+  const total = countTransactions(where);
+  const txs   = queryRecentTransactions(where, total || 500, 0);
 
   // Summary cards
   document.getElementById('totalIncome').textContent  = formatRp(summary.totalIncome);
@@ -362,7 +379,7 @@ function renderDashboard() {
   balanceEl.className = 'card-value balance';
 
   if (balance < 0) {
-    balanceEl.textContent  = '−' + formatRp(balance);   // formatRp uses Math.abs, so this is safe
+    balanceEl.textContent  = '−' + formatRp(balance);
     balanceEl.style.color  = 'var(--color-destructive-light)';
     if (balanceSub) balanceSub.textContent = 'Overspent';
   } else {
@@ -370,7 +387,6 @@ function renderDashboard() {
     balanceEl.style.color  = '';
     if (balanceSub) balanceSub.textContent = 'Total Available Balance';
   }
-
 
   // Top category
   if (categories.length > 0) {
@@ -389,7 +405,7 @@ function renderDashboard() {
     : `${MONTHS[viewMonth]} ${viewYear}`;
   document.getElementById('monthLabel').textContent = label;
   document.getElementById('chartBadge').textContent = isAllTime ? 'All Time' : 'This Month';
-  document.getElementById('txBadge').textContent    = 'Last 20';
+  updateTxBadge(total);
 
   // Month nav opacity when all-time
   document.getElementById('monthNav').style.opacity = isAllTime ? '0.4' : '1';
@@ -399,8 +415,14 @@ function renderDashboard() {
   // Chart + Legend
   renderChart(categories, summary.totalExpense);
 
-  // Transactions
-  renderTransactions(txs);
+  // Transactions (all loaded, scroll to see more)
+  renderTransactions(txs, total);
+}
+
+function updateTxBadge(total) {
+  const badge = document.getElementById('txBadge');
+  if (!badge) return;
+  badge.textContent = total === 0 ? 'Empty' : `${total} total`;
 }
 
 // ── Chart Rendering ────────────────────────────────────────
@@ -498,7 +520,7 @@ function renderChart(categories, totalExpense) {
 }
 
 // ── Transaction List Rendering ─────────────────────────────
-function renderTransactions(txs) {
+function renderTransactions(txs, total = 0) {
   const container = document.getElementById('transactionsList');
 
   if (txs.length === 0) {
@@ -511,38 +533,92 @@ function renderTransactions(txs) {
   }
 
   container.innerHTML = '';
+
   txs.forEach(tx => {
     const isIncome = tx.type === 'income';
     const catDef   = isIncome ? null : findCategory(tx.category);
     const catColor = isIncome ? '#10B981' : (catDef ? catDef.color : '#6B7280');
     const catLabel = isIncome ? 'Income' : (catDef ? catDef.label : (tx.category || 'Others'));
-    const initial  = isIncome ? '₊' : catLabel.charAt(0).toUpperCase();
+    const initial  = isIncome ? '+' : catLabel.charAt(0).toUpperCase();
+    const noteText = tx.note ? tx.note : '—';
 
     const item = document.createElement('div');
     item.className = 'tx-item';
     item.dataset.id = tx.id;
     item.innerHTML = `
-      <div class="tx-icon" style="background:${catColor}22;">
-        <span style="
-          display:inline-flex;align-items:center;justify-content:center;
-          width:100%;height:100%;
-          color:${catColor};
-          font-family:var(--font-heading);
-          font-size:0.9rem;font-weight:700;
-        ">${initial}</span>
-      </div>
-      <div class="tx-info">
-        <div class="tx-category">${catLabel}${tx.note ? ` — ${tx.note}` : ''}</div>
-        <div class="tx-note">${formatDate(tx.date)}</div>
-      </div>
-      <span class="tx-amount ${isIncome ? 'income' : 'expense'}">
-        ${isIncome ? '+' : '−'} ${formatRp(tx.amount)}
-      </span>
-      <button class="tx-delete" data-id="${tx.id}" title="Delete transaction" aria-label="Delete transaction">
-        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
+      <button class="tx-row" aria-expanded="false" aria-controls="tx-detail-${tx.id}">
+        <div class="tx-icon" style="background:${catColor}22;">
+          <span style="
+            display:inline-flex;align-items:center;justify-content:center;
+            width:100%;height:100%;
+            color:${catColor};
+            font-family:var(--font-heading);
+            font-size:0.9rem;font-weight:700;
+          ">${initial}</span>
+        </div>
+        <div class="tx-info">
+          <div class="tx-category">${catLabel}</div>
+        </div>
+        <span class="tx-amount ${isIncome ? 'income' : 'expense'}">
+          ${isIncome ? '+' : '−'}&nbsp;${formatRp(tx.amount)}
+        </span>
+        <svg class="tx-chevron" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
       </button>
+      <div class="tx-detail" id="tx-detail-${tx.id}">
+        <div class="tx-detail-inner">
+          <div class="tx-detail-content">
+            <div class="tx-detail-row">
+              <span class="tx-detail-label">Note</span>
+              <span class="tx-detail-value">${noteText}</span>
+            </div>
+            <div class="tx-detail-row">
+              <span class="tx-detail-label">Date</span>
+              <span class="tx-detail-value">${formatDate(tx.date)}</span>
+            </div>
+            <div class="tx-detail-actions">
+              <button class="tx-delete" data-id="${tx.id}" title="Delete transaction" aria-label="Delete transaction">
+                <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
     `;
     container.appendChild(item);
+
+    // Accordion toggle — simple class-based, no inline styles needed
+    const rowBtn  = item.querySelector('.tx-row');
+    const detail  = item.querySelector('.tx-detail');
+    const chevron = item.querySelector('.tx-chevron');
+    rowBtn.addEventListener('click', () => {
+      const isOpen = detail.classList.toggle('tx-detail--open');
+      rowBtn.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+      chevron.classList.toggle('tx-chevron--open', isOpen);
+
+      // Emil Kowalski WAAPI programmatic animation
+      if (isOpen) {
+        detail.style.height = 'auto'; // Set to auto so it scales correctly if window resizes
+        const targetHeight = detail.scrollHeight + 'px';
+        detail.animate([
+          { height: '0px' },
+          { height: targetHeight }
+        ], {
+          duration: 300,
+          easing: 'cubic-bezier(0.32, 0.72, 0, 1)'
+        });
+      } else {
+        const currentHeight = detail.scrollHeight + 'px';
+        detail.style.height = '0px';
+        detail.animate([
+          { height: currentHeight },
+          { height: '0px' }
+        ], {
+          duration: 300,
+          easing: 'cubic-bezier(0.32, 0.72, 0, 1)'
+        });
+      }
+    });
   });
 
   // Delete handlers

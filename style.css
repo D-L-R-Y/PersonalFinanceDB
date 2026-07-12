@@ -452,6 +452,8 @@ body::before {
 
 /* ── Glass Card ────────────────────────────────────────── */
 .glass-card {
+  display: flex;
+  flex-direction: column;
   background: linear-gradient(
     135deg,
     rgba(30, 41, 59, 0.9),
@@ -466,6 +468,8 @@ body::before {
   
   /* Prevent flex/grid blowout on small screens */
   min-width: 0;
+  /* Allow the card to shrink smaller than its content so inner lists can scroll */
+  min-height: 0;
 }
 .glass-card:hover { border-color: var(--color-border-hover); }
 
@@ -580,32 +584,51 @@ body::before {
   min-width: 90px;
 }
 
-/* ── Transactions Table ────────────────────────────────── */
+/* ── Transactions Panel ──────────────────────────────────── */
 .transactions-list {
   display: flex;
   flex-direction: column;
-  gap: var(--space-2);
+  flex: 1;
+  min-height: 0;
+  max-height: 500px; /* Upper bound for mobile when stacked */
+  gap: var(--space-3);
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding-right: var(--space-2);
 }
 
+/* ── Individual transaction item wrapper (Bubble) ──────── */
 .tx-item {
+  flex-shrink: 0;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: var(--radius-lg);
+  transition: background var(--transition-fast), border-color var(--transition-fast);
+}
+.tx-item:hover,
+.tx-item:has(.tx-row[aria-expanded="true"]) {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+/* ── Clickable accordion row ────────────────────────── */
+.tx-row {
+  width: 100%;
   display: flex;
   align-items: center;
   gap: var(--space-3);
   padding: var(--space-3) var(--space-4);
-  background: rgba(255,255,255,0.02);
-  border: 1px solid transparent;
-  border-radius: var(--radius-md);
-  transition: all var(--transition-fast);
-  cursor: default;
-}
-.tx-item:hover {
-  background: rgba(255,255,255,0.05);
-  border-color: var(--color-border);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+  color: inherit;
 }
 
 .tx-icon {
-  width: 36px;
-  height: 36px;
+  width: 34px;
+  height: 34px;
   border-radius: var(--radius-md);
   display: flex;
   align-items: center;
@@ -624,47 +647,111 @@ body::before {
   text-overflow: ellipsis;
 }
 
-.tx-note {
-  font-size: 0.72rem;
+/* Chevron icon with rotate animation */
+.tx-chevron {
+  flex-shrink: 0;
   color: var(--color-text-dim);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  transition: transform 260ms cubic-bezier(0.4, 0, 0.2, 1);
 }
-
-.tx-date {
-  font-size: 0.72rem;
-  color: var(--color-text-dim);
-  white-space: nowrap;
+.tx-chevron--open {
+  transform: rotate(180deg);
 }
 
 .tx-amount {
   font-family: var(--font-heading);
-  font-size: 0.9rem;
+  font-size: 0.88rem;
   font-weight: 700;
   white-space: nowrap;
+  flex-shrink: 0;
 }
 .tx-amount.income  { color: var(--color-accent-light); }
 .tx-amount.expense { color: var(--color-destructive-light); }
 
-.tx-delete {
-  opacity: 0;
-  transition: opacity var(--transition-fast);
-  background: none;
-  border: none;
-  color: var(--color-text-dim);
-  cursor: pointer;
-  padding: var(--space-1);
-  border-radius: var(--radius-sm);
-  display: flex;
-  align-items: center;
+/* ── Accordion detail panel ──────────────────────────── */
+.tx-detail {
+  height: 0;
+  overflow: hidden;
+  transition: background 300ms ease, border-color 300ms ease;
+  border-top: 1px solid transparent;
+  background: transparent;
 }
-.tx-item:hover .tx-delete { opacity: 1; }
-.tx-delete:hover { color: var(--color-destructive-light); }
+/* Expanded state — toggled by JS class */
+.tx-detail.tx-detail--open {
+  border-top-color: var(--color-border);
+  background: rgba(255,255,255,0.03);
+}
 
-@media (max-width: 900px) {
-  .tx-delete { opacity: 1; }
+.tx-detail-inner {
+  min-height: 0;
+  overflow: hidden;
+  opacity: 0;
+  transition: opacity 200ms ease;
 }
+.tx-detail.tx-detail--open .tx-detail-inner {
+  opacity: 1;
+  transition: opacity 300ms ease 50ms;
+}
+
+.tx-detail-content {
+  padding: var(--space-3) var(--space-4);
+}
+
+.tx-detail-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: var(--space-3);
+  padding: var(--space-1) 0;
+}
+.tx-detail-row + .tx-detail-row {
+  border-top: 1px solid rgba(255,255,255,0.04);
+}
+
+.tx-detail-label {
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--color-text-dim);
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+.tx-detail-value {
+  font-size: 0.8rem;
+  color: var(--color-text-muted);
+  text-align: right;
+  word-break: break-word;
+}
+
+.tx-detail-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: var(--space-2);
+  padding-top: var(--space-2);
+  border-top: 1px solid rgba(255,255,255,0.05);
+}
+
+.tx-delete {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  background: rgba(220, 38, 38, 0.08);
+  border: 1px solid rgba(220, 38, 38, 0.2);
+  color: var(--color-destructive-light);
+  cursor: pointer;
+  padding: 4px 10px;
+  border-radius: var(--radius-full);
+  font-size: 0.72rem;
+  font-weight: 500;
+  font-family: var(--font-body);
+  transition: background var(--transition-fast), border-color var(--transition-fast);
+}
+.tx-delete:hover {
+  background: rgba(220, 38, 38, 0.18);
+  border-color: rgba(220, 38, 38, 0.4);
+}
+
+
 
 .empty-state {
   text-align: center;
@@ -1114,8 +1201,8 @@ input[type="date"].form-input {
     padding: var(--space-2) var(--space-2) var(--space-2);
   }
 
-  /* Reduce transaction item padding */
-  .tx-item {
+  /* Reduce transaction row padding on mobile */
+  .tx-row {
     padding: var(--space-2) var(--space-3);
   }
 }

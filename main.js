@@ -1,6 +1,10 @@
 const { app, BrowserWindow, shell } = require('electron');
 const path = require('path');
 
+// Disable GPU compositing — prevents blank/invisible windows on some GPU drivers
+app.commandLine.appendSwitch('disable-gpu');
+app.commandLine.appendSwitch('disable-software-rasterizer');
+
 // Keep a global reference to prevent garbage collection
 let mainWindow;
 
@@ -10,6 +14,7 @@ function createWindow() {
     height: 820,
     minWidth:  900,
     minHeight: 600,
+    center: true,                   // always center on primary monitor
     title: 'FinanceDB',
     icon: path.join(__dirname, 'icon.png'),
     backgroundColor: '#0F172A',   // match app background — no white flash on load
@@ -29,7 +34,9 @@ function createWindow() {
 
   // Show window only when fully rendered
   mainWindow.once('ready-to-show', () => {
+    mainWindow.center();
     mainWindow.show();
+    mainWindow.focus();
   });
 
   // Open external links in the system browser, not in Electron

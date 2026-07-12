@@ -8,3 +8,6 @@ Thumbs.db
 
 # Design system (not needed in app)
 design-system/
+
+# Chrome isolated profile for file:// WASM access
+.chrome-profile/
