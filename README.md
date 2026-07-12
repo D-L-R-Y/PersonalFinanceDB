@@ -30,14 +30,21 @@ If you want to modify the code or build the app yourself:
    ```
 4. Find the generated installer inside the `dist/` folder and double-click to install.
 
-### Option 3: Run in Development Mode
-To test the app locally without building the `.exe`:
+### Option 3: Run Locally in Browser (No Build Required)
+If you don't want to install Node.js or build the `.exe`, you can still run the app directly in your browser.
+
+However, modern browsers block local files (`file://`) from loading WebAssembly (`.wasm`), which prevents the SQLite database from starting if you just double-click `index.html`. 
+
+To bypass this restriction easily:
+- Double-click **`Open FinanceDB.bat`**
+- This script automatically launches a secure, isolated Chrome window with the `--allow-file-access-from-files` flag enabled so the database engine can load locally.
+
+Alternatively, you can test via Node.js by running:
 ```bash
 npm install
 npm start
 ```
-Since the core uses standard Web technologies, you can also just double-click `index.html` in your file explorer to open it in any browser, or host it on GitHub Pages as a PWA.
-
+Or simply host the repository on GitHub Pages to run it as a PWA.
 ---
 
 ## Features
