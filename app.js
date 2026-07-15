@@ -23,11 +23,30 @@ const DEFAULT_SETTINGS = {
   appName:    '',
   currency:   'Rp',
   categories: null,   // null = use DEFAULT_CATEGORIES
+  theme:      'midnight',
+  customTheme: {
+    bgColor: '#1E293B',
+    bgImage: null,
+    primaryColor: '#3B82F6',
+    borderColor: '#334155',
+    textColor: '#FAFAFA'
+  }
 };
 
 const MONTHS = [
   'January','February','March','April','May','June',
   'July','August','September','October','November','December'
+];
+
+// Theme definitions for the picker UI
+const THEMES = [
+  { id: 'midnight', name: 'Midnight',  desc: 'Deep navy — trusted classic',          preview: ['#0F172A', '#1E40AF', '#059669'], isLight: false },
+  { id: 'obsidian', name: 'Obsidian',  desc: 'True OLED black — indigo glow',         preview: ['#09090B', '#6366F1', '#8B5CF6'], isLight: false },
+  { id: 'ocean',    name: 'Ocean',     desc: 'Deep-sea blues — cyan tones',           preview: ['#0C1222', '#0891B2', '#14B8A6'], isLight: false },
+  { id: 'forest',   name: 'Forest',    desc: 'Dark canopy — emerald accents',          preview: ['#0A1410', '#059669', '#F59E0B'], isLight: false },
+  { id: 'sakura',   name: 'Sakura',    desc: 'Soft rose — warm light theme',           preview: ['#FFF5F5', '#DB2777', '#059669'], isLight: true  },
+  { id: 'sand',     name: 'Sand',      desc: 'Clean warm white — gold accents',        preview: ['#FAFAF9', '#1C1917', '#A16207'], isLight: true  },
+  { id: 'custom',   name: 'Custom',    desc: 'Your personalized theme',                preview: ['#1E293B', '#3B82F6', '#FAFAFA'], isLight: false },
 ];
 
 // ── State ──────────────────────────────────────────────────
@@ -132,6 +151,7 @@ function loadSettings() {
     if (raw) {
       const parsed = JSON.parse(raw);
       settings = { ...DEFAULT_SETTINGS, ...parsed };
+      settings.customTheme = { ...DEFAULT_SETTINGS.customTheme, ...(parsed.customTheme || {}) };
       if (!Array.isArray(settings.categories) || settings.categories.length === 0) {
         settings.categories = DEFAULT_CATEGORIES.map(c => ({ ...c }));
       }
@@ -158,6 +178,185 @@ function applySettings() {
   const curInput  = document.getElementById('settingsCurrency');
   if (nameInput) nameInput.value = settings.appName || '';
   if (curInput)  curInput.value  = settings.currency || 'Rp';
+}
+
+// ── Theme System ──────────────────────────────────────────
+
+// Theme background colors for meta[name=theme-color] (PWA)
+const THEME_META_COLORS = {
+  midnight: '#0F172A',
+  obsidian: '#09090B',
+  ocean:    '#0C1222',
+  forest:   '#0A1410',
+  sakura:   '#FFF5F5',
+  sand:     '#FAFAF9',
+};
+
+function applyTheme(themeName) {
+  const theme = themeName || 'midnight';
+  document.documentElement.setAttribute('data-theme', theme);
+
+  if (theme === 'custom') {
+    const c = settings.customTheme;
+    document.documentElement.style.setProperty('--color-bg', c.bgColor);
+    document.documentElement.style.setProperty('--color-primary', c.primaryColor);
+    document.documentElement.style.setProperty('--color-border', c.borderColor);
+    document.documentElement.style.setProperty('--color-text', c.textColor);
+    
+    if (c.bgImage) {
+      document.body.style.backgroundImage = `url(${c.bgImage})`;
+      document.body.style.backgroundSize = 'cover';
+      document.body.style.backgroundPosition = 'center';
+      document.body.style.backgroundAttachment = 'fixed';
+      document.documentElement.setAttribute('data-has-bg-image', 'true');
+    } else {
+      document.body.style.backgroundImage = '';
+      document.documentElement.removeAttribute('data-has-bg-image');
+    }
+  } else {
+    document.documentElement.style.removeProperty('--color-bg');
+    document.documentElement.style.removeProperty('--color-primary');
+    document.documentElement.style.removeProperty('--color-border');
+    document.documentElement.style.removeProperty('--color-text');
+    document.body.style.backgroundImage = '';
+    document.documentElement.removeAttribute('data-has-bg-image');
+  }
+
+  // Update PWA theme-color meta tag
+  const metaTheme = document.querySelector('meta[name="theme-color"]');
+  const baseColors = { ...THEME_META_COLORS, custom: settings.customTheme?.bgColor || '#1E293B' };
+  if (metaTheme && baseColors[theme]) {
+    metaTheme.setAttribute('content', baseColors[theme]);
+  }
+}
+
+function renderThemePicker() {
+  const grid = document.getElementById('themePickerGrid');
+  if (!grid) return;
+  grid.innerHTML = '';
+
+  THEMES.forEach(theme => {
+    const swatch = document.createElement('button');
+    swatch.type = 'button';
+    swatch.className = 'theme-swatch' + (settings.theme === theme.id ? ' selected' : '');
+    swatch.dataset.theme = theme.id;
+
+    // Use live custom settings for the Custom swatch preview
+    const c = settings.customTheme;
+    const preview = (theme.id === 'custom' && c) 
+      ? [c.bgColor, c.primaryColor, c.textColor] 
+      : theme.preview;
+
+    swatch.innerHTML = `
+      <div class="theme-swatch-preview">
+        <div class="theme-swatch-dot" style="background:${preview[0]}"></div>
+        <div class="theme-swatch-dot" style="background:${preview[1]}"></div>
+        <div class="theme-swatch-dot" style="background:${preview[2]}"></div>
+      </div>
+      <div class="theme-swatch-name">${theme.name}</div>
+      <div class="theme-swatch-desc">${theme.desc}</div>
+    `;
+    swatch.addEventListener('click', () => {
+      settings.theme = theme.id;
+      saveSettings();
+      applyTheme(theme.id);
+      
+      // Toggle custom editor visibility
+      const editor = document.getElementById('customThemeEditor');
+      if (editor) editor.style.display = (theme.id === 'custom') ? 'block' : 'none';
+
+      // Update selected state in picker
+      grid.querySelectorAll('.theme-swatch').forEach(s => {
+        s.classList.toggle('selected', s.dataset.theme === theme.id);
+      });
+      showToast(`Theme set to ${theme.name}`, 'success');
+    });
+    grid.appendChild(swatch);
+  });
+
+  // Initial visibility of custom editor
+  const editor = document.getElementById('customThemeEditor');
+  if (editor) editor.style.display = (settings.theme === 'custom') ? 'block' : 'none';
+}
+
+function setupCustomThemeControls() {
+  const customEditor = document.getElementById('customThemeEditor');
+  if (!customEditor) return;
+
+  const bgInput      = document.getElementById('customBgColor');
+  const primaryInput = document.getElementById('customPrimaryColor');
+  const borderInput  = document.getElementById('customBorderColor');
+  const textInput    = document.getElementById('customTextColor');
+  const imageInput   = document.getElementById('customBgImageInput');
+  const btnRemoveBg  = document.getElementById('btnRemoveCustomBg');
+
+  const c = settings.customTheme;
+  if (!c) return;
+
+  bgInput.value      = c.bgColor;
+  primaryInput.value = c.primaryColor;
+  borderInput.value  = c.borderColor;
+  textInput.value    = c.textColor;
+  if (c.bgImage) {
+    btnRemoveBg.style.display = 'inline-flex';
+  }
+
+  const updateCustom = () => {
+    c.bgColor      = bgInput.value;
+    c.primaryColor = primaryInput.value;
+    c.borderColor  = borderInput.value;
+    c.textColor    = textInput.value;
+    saveSettings();
+    if (settings.theme === 'custom') {
+      applyTheme('custom');
+      // Update the swatch preview dots
+      renderThemePicker();
+    }
+  };
+
+  bgInput.addEventListener('input', updateCustom);
+  primaryInput.addEventListener('input', updateCustom);
+  borderInput.addEventListener('input', updateCustom);
+  textInput.addEventListener('input', updateCustom);
+
+  imageInput.addEventListener('change', e => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        let width = img.width;
+        let height = img.height;
+        const MAX = 1080;
+        if (width > height) {
+          if (width > MAX) { height *= MAX / width; width = MAX; }
+        } else {
+          if (height > MAX) { width *= MAX / height; height = MAX; }
+        }
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, width, height);
+
+        const dataUrl = canvas.toDataURL('image/jpeg', 0.6); // Compress
+        c.bgImage = dataUrl;
+        btnRemoveBg.style.display = 'inline-flex';
+        updateCustom();
+      };
+      img.src = ev.target.result;
+    };
+    reader.readAsDataURL(file);
+    e.target.value = '';
+  });
+
+  btnRemoveBg.addEventListener('click', () => {
+    c.bgImage = null;
+    btnRemoveBg.style.display = 'none';
+    updateCustom();
+  });
 }
 
 // Build the live category list inside Settings > Categories tab
@@ -316,6 +515,17 @@ function queryCategoryBreakdown(where) {
   return res[0].values.map(r => ({ category: r[0], total: r[1] }));
 }
 
+function queryTodaySpending() {
+  const today = todayISO();
+  const res = db.exec(
+    `SELECT COALESCE(SUM(amount),0) as total, COUNT(*) as cnt
+     FROM transactions
+     WHERE type='expense' AND date = '${today}'`
+  );
+  const row = res[0]?.values[0] || [0, 0];
+  return { total: row[0], count: row[1] };
+}
+
 function queryRecentTransactions(where, limit = TX_PAGE_SIZE, offset = 0) {
   if (!db) return [];
   const res = db.exec(
@@ -388,15 +598,33 @@ function renderDashboard() {
     if (balanceSub) balanceSub.textContent = 'Total Available Balance';
   }
 
-  // Top category
+  // Spendings Today (calendar-day)
+  const todayData = queryTodaySpending();
+  document.getElementById('todaySpending').textContent     = formatRp(todayData.total);
+  document.getElementById('todaySpendingCount').textContent = `${todayData.count} transaction${todayData.count !== 1 ? 's' : ''} today`;
+
+  // Top category — now shown in the donut chart card header
+  const topCatHeader = document.getElementById('topCategoryHeader');
   if (categories.length > 0) {
     const top = categories[0];
     const catDef = findCategory(top.category) || { label: top.category || 'Others', color: '#6B7280' };
+    const pct = ((top.total / summary.totalExpense) * 100).toFixed(1);
     document.getElementById('topCategory').textContent      = catDef.label;
     document.getElementById('topCategoryAmount').textContent = formatRp(top.total);
+    document.getElementById('topCategoryPct').textContent    = `(${pct}%)`;
+    
+    // Set dynamic color for the top category badge and text
+    topCatHeader.style.setProperty('--top-cat-color', catDef.color);
+    
+    topCatHeader.classList.remove('hidden');
   } else {
     document.getElementById('topCategory').textContent      = '—';
     document.getElementById('topCategoryAmount').textContent = 'No spending yet';
+    document.getElementById('topCategoryPct').textContent    = '';
+    
+    topCatHeader.style.removeProperty('--top-cat-color');
+    
+    topCatHeader.classList.add('hidden');
   }
 
   // Month label & badges
@@ -1332,6 +1560,7 @@ function setupEventListeners() {
       tab.classList.add('active');
       document.getElementById('tab-' + tab.dataset.tab).classList.add('active');
       if (tab.dataset.tab === 'categories') renderSettingsCategories();
+      if (tab.dataset.tab === 'themes') renderThemePicker();
     });
   });
 
@@ -1404,6 +1633,8 @@ async function main() {
   // ── Phase 1: UI setup — always runs, DB-independent ──
   loadSettings();
   applySettings();
+  applyTheme(settings.theme);
+  setupCustomThemeControls();
   buildCategoryGrid();
   setupAmountFormatting('spendAmount');
   setupAmountFormatting('incomeAmount');

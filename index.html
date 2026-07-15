@@ -107,11 +107,11 @@
         <div class="card-sub" id="balanceSub">Income − Spending</div>
         <svg class="card-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
       </div>
-      <div class="summary-card top-cat">
-        <div class="card-label">Top Category</div>
-        <div class="card-value top-cat" id="topCategory">—</div>
-        <div class="card-sub" id="topCategoryAmount">No spending yet</div>
-        <svg class="card-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M18 20V10"/><path d="M12 20V4"/><path d="M6 20v-6"/></svg>
+      <div class="summary-card today">
+        <div class="card-label">Spendings Today</div>
+        <div class="card-value today" id="todaySpending">Rp 0</div>
+        <div class="card-sub" id="todaySpendingCount">0 transactions today</div>
+        <svg class="card-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
       </div>
     </div>
 
@@ -123,6 +123,17 @@
         <div class="card-header">
           <span class="card-title">Spending by Category</span>
           <span class="card-badge" id="chartBadge">This Month</span>
+        </div>
+        <!-- Top Category highlight (moved from summary cards) -->
+        <div class="top-category-header" id="topCategoryHeader">
+          <div class="top-cat-badge">Top Category</div>
+          <div class="top-cat-info">
+            <span class="top-cat-name" id="topCategory">—</span>
+            <span class="top-cat-details">
+              <span id="topCategoryAmount">No spending yet</span>
+              <span class="top-cat-pct" id="topCategoryPct"></span>
+            </span>
+          </div>
         </div>
         <div id="chartArea">
           <div class="chart-container">
@@ -342,6 +353,7 @@
       <div class="settings-tabs" role="tablist">
         <button class="settings-tab active" data-tab="profile" role="tab" aria-selected="true">Profile</button>
         <button class="settings-tab" data-tab="categories" role="tab" aria-selected="false">Categories</button>
+        <button class="settings-tab" data-tab="themes" role="tab" aria-selected="false">Themes</button>
       </div>
 
       <!-- ── Profile Tab ──────────────────────────────────── -->
@@ -383,6 +395,50 @@
           </button>
         </div>
         <p style="font-size:0.72rem;color:var(--color-text-dim);margin-top:10px;">Changes save automatically. Deleting a category shows its transactions as "Others".</p>
+      </div>
+
+      <!-- ── Themes Tab ─────────────────────────────────────── -->
+      <div class="settings-section" id="tab-themes">
+        <div class="settings-label">Choose Your Theme</div>
+        <div class="theme-picker-grid" id="themePickerGrid">
+          <!-- Populated by JS -->
+        </div>
+
+        <!-- Custom Theme Editor (Hidden by default) -->
+        <div class="custom-theme-editor" id="customThemeEditor" style="display: none;">
+          <div class="settings-label" style="margin-top: 16px; margin-bottom: 8px;">Custom Theme Settings</div>
+          
+          <div class="custom-theme-row">
+            <span>Background</span>
+            <div class="custom-theme-controls">
+              <input type="color" id="customBgColor" class="custom-color-picker" value="#1E293B" title="Background Color" />
+              <label class="btn btn-secondary btn-sm btn-upload" for="customBgImageInput">
+                Photo
+                <input type="file" id="customBgImageInput" accept="image/*" style="display: none;" />
+              </label>
+              <button id="btnRemoveCustomBg" class="btn btn-secondary btn-sm btn-upload" style="display: none;" title="Remove Photo">
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+              </button>
+            </div>
+          </div>
+          
+          <div class="custom-theme-row">
+            <span>Primary Color</span>
+            <input type="color" id="customPrimaryColor" class="custom-color-picker" value="#3B82F6" />
+          </div>
+          
+          <div class="custom-theme-row">
+            <span>Border Color</span>
+            <input type="color" id="customBorderColor" class="custom-color-picker" value="#334155" />
+          </div>
+          
+          <div class="custom-theme-row">
+            <span>Text Color</span>
+            <input type="color" id="customTextColor" class="custom-color-picker" value="#FAFAFA" />
+          </div>
+        </div>
+
+        <p style="font-size:0.72rem;color:var(--color-text-dim);margin-top:12px;">Theme is saved automatically and persists across sessions.</p>
       </div>
     </div>
   </div>
