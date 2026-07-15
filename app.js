@@ -1039,8 +1039,11 @@ function exportCSV() {
   const result = db.exec("SELECT id, type, amount, category, date, note FROM transactions ORDER BY date DESC");
   if (!result.length) return showToast('No transactions to export.', 'error');
   
-  const headers = ['id', 'type', 'amount', 'category', 'date', 'note'];
-  const rows = result[0].values.map(row => row.map(escapeCSV).join(','));
+  const headers = ['id', 'type', 'amount', 'category', 'date', 'note', 'category_name', 'category_color'];
+  const rows = result[0].values.map(row => {
+    const cat = getCategories().find(c => c.id === row[3]) || {};
+    return [...row, cat.label || row[3], cat.color || ''].map(escapeCSV).join(',');
+  });
   const csvContent = [headers.join(','), ...rows].join('\n');
   
   const blob = new Blob([csvContent], { type: 'text/csv' });
@@ -1061,6 +1064,9 @@ function exportJSON() {
   const data = result[0].values.map(row => {
     let obj = {};
     columns.forEach((col, i) => obj[col] = row[i]);
+    const cat = getCategories().find(c => c.id === obj.category) || {};
+    obj.category_name = cat.label || obj.category;
+    obj.category_color = cat.color || '';
     return obj;
   });
   
@@ -1093,9 +1099,17 @@ function importCSV(file) {
         if (obj.type && obj.amount && obj.date) {
           db.run(`INSERT INTO transactions (id, type, amount, category, date, note) VALUES (?, ?, ?, ?, ?, ?)`, 
                  [obj.id || Date.now().toString() + i, obj.type, parseFloat(obj.amount) || 0, obj.category || '', obj.date, obj.note || '']);
+          
+          if (obj.category_name && obj.category_name !== obj.category) {
+            const existing = settings.categories.find(c => c.id === obj.category);
+            if (!existing) {
+              settings.categories.push({ id: obj.category, label: obj.category_name, color: obj.category_color || '#71717A' });
+            }
+          }
           count++;
         }
       }
+      saveSettings();
       db.run("COMMIT");
       persistDB();
       renderDashboard();
@@ -1121,9 +1135,17 @@ function importJSON(file) {
         if (obj.type && obj.amount && obj.date) {
           db.run(`INSERT INTO transactions (id, type, amount, category, date, note) VALUES (?, ?, ?, ?, ?, ?)`, 
                  [obj.id || Date.now().toString() + count, obj.type, parseFloat(obj.amount) || 0, obj.category || '', obj.date, obj.note || '']);
+          
+          if (obj.category_name && obj.category_name !== obj.category) {
+            const existing = settings.categories.find(c => c.id === obj.category);
+            if (!existing) {
+              settings.categories.push({ id: obj.category, label: obj.category_name, color: obj.category_color || '#71717A' });
+            }
+          }
           count++;
         }
       }
+      saveSettings();
       db.run("COMMIT");
       persistDB();
       renderDashboard();
