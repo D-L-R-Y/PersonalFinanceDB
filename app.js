@@ -952,7 +952,16 @@ function updateMonthView(delta) {
 
 // ── Export / Import ────────────────────────────────────────
 function exportDB() {
+  db.run("CREATE TABLE IF NOT EXISTS categories_export (id TEXT, label TEXT, color TEXT)");
+  db.run("DELETE FROM categories_export");
+  if (settings.categories) {
+    for (const cat of settings.categories) {
+      db.run("INSERT INTO categories_export (id, label, color) VALUES (?, ?, ?)", [cat.id, cat.label, cat.color]);
+    }
+  }
   const data = db.export();
+  db.run("DROP TABLE categories_export");
+
   const blob = new Blob([data], { type: 'application/octet-stream' });
   const url  = URL.createObjectURL(blob);
   const a    = document.createElement('a');
@@ -972,6 +981,22 @@ function importDB(file) {
       });
       const buf = new Uint8Array(e.target.result);
       db = new SQL.Database(buf);
+
+      try {
+        const res = db.exec("SELECT id, label, color FROM categories_export");
+        if (res.length > 0) {
+          const importedCategories = res[0].values.map(row => ({ id: row[0], label: row[1], color: row[2] }));
+          importedCategories.forEach(imported => {
+            const existing = settings.categories.find(c => c.id === imported.id || c.label.toLowerCase() === imported.label.toLowerCase());
+            if (!existing) {
+              settings.categories.push(imported);
+            }
+          });
+          saveSettings();
+        }
+        db.run("DROP TABLE categories_export");
+      } catch (err) {}
+
       persistDB();
       renderDashboard();
       showToast('Database imported successfully!', 'success');
