@@ -216,6 +216,7 @@ function applyTheme(themeName) {
     }
   } else {
     document.documentElement.style.removeProperty('--color-bg');
+    document.documentElement.style.removeProperty('--color-surface');
     document.documentElement.style.removeProperty('--color-primary');
     document.documentElement.style.removeProperty('--color-border');
     document.documentElement.style.removeProperty('--color-text');

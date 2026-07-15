@@ -1,4 +1,4 @@
-const CACHE_NAME = 'financedb-v1.2.0-hotfix';
+const CACHE_NAME = 'financedb-v1.2.0-hotfix2';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
