@@ -988,7 +988,11 @@ function importDB(file) {
           const importedCategories = res[0].values.map(row => ({ id: row[0], label: row[1], color: row[2] }));
           importedCategories.forEach(imported => {
             const existing = settings.categories.find(c => c.id === imported.id || c.label.toLowerCase() === imported.label.toLowerCase());
-            if (!existing) {
+            if (existing && existing.id !== imported.id) {
+              // The user already has a category with this label, but a different ID.
+              // Remap all imported transactions to use the existing ID.
+              db.run("UPDATE transactions SET category = ? WHERE category = ?", [existing.id, imported.id]);
+            } else if (!existing) {
               settings.categories.push(imported);
             }
           });
