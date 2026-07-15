@@ -960,8 +960,7 @@ function exportDB() {
     }
   }
   const data = db.export();
-  db.run("DROP TABLE categories_export");
-
+  
   const blob = new Blob([data], { type: 'application/octet-stream' });
   const url  = URL.createObjectURL(blob);
   const a    = document.createElement('a');
@@ -983,22 +982,53 @@ function importDB(file) {
       db = new SQL.Database(buf);
 
       try {
-        const res = db.exec("SELECT id, label, color FROM categories_export");
-        if (res.length > 0) {
-          const importedCategories = res[0].values.map(row => ({ id: row[0], label: row[1], color: row[2] }));
-          importedCategories.forEach(imported => {
-            const existing = settings.categories.find(c => c.id === imported.id || c.label.toLowerCase() === imported.label.toLowerCase());
-            if (existing && existing.id !== imported.id) {
-              // The user already has a category with this label, but a different ID.
-              // Remap all imported transactions to use the existing ID.
-              db.run("UPDATE transactions SET category = ? WHERE category = ?", [existing.id, imported.id]);
-            } else if (!existing) {
-              settings.categories.push(imported);
+        let hasExportedCategories = false;
+        try {
+          const res = db.exec("SELECT id, label, color FROM categories_export");
+          if (res.length > 0) {
+            hasExportedCategories = true;
+            const importedCategories = res[0].values.map(row => ({ id: row[0], label: row[1], color: row[2] }));
+            importedCategories.forEach(imported => {
+              const existing = settings.categories.find(c => c.id === imported.id || c.label.toLowerCase() === imported.label.toLowerCase());
+              if (existing && existing.id !== imported.id) {
+                db.run("UPDATE transactions SET category = ? WHERE category = ?", [existing.id, imported.id]);
+              } else if (!existing) {
+                settings.categories.push(imported);
+              }
+            });
+            saveSettings();
+          }
+          db.run("DROP TABLE categories_export");
+        } catch (e) {}
+
+        if (!hasExportedCategories) {
+          try {
+            const txRes = db.exec("SELECT DISTINCT category FROM transactions");
+            if (txRes.length > 0) {
+              let changed = false;
+              const usedCategories = txRes[0].values.map(row => row[0]);
+              usedCategories.forEach(catId => {
+                if (!catId) return;
+                const existing = settings.categories.find(c => c.id === catId);
+                if (!existing) {
+                  const match = catId.match(/^(.*)_(\d{13})$/);
+                  let label = catId;
+                  if (match) {
+                    label = match[1].replace(/_/g, ' ');
+                    const labelMatch = settings.categories.find(c => c.label.toLowerCase() === label.toLowerCase());
+                    if (labelMatch) {
+                      db.run("UPDATE transactions SET category = ? WHERE category = ?", [labelMatch.id, catId]);
+                      return;
+                    }
+                  }
+                  settings.categories.push({ id: catId, label, color: '#71717A' });
+                  changed = true;
+                }
+              });
+              if (changed) saveSettings();
             }
-          });
-          saveSettings();
+          } catch(e) {}
         }
-        db.run("DROP TABLE categories_export");
       } catch (err) {}
 
       persistDB();
