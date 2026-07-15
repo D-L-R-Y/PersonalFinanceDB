@@ -1329,7 +1329,7 @@ input[type="date"].form-input {
    * Fix: replace the blurred glass background with a solid opaque one.
    */
   .glass-card {
-    background: #1E293B;           /* solid, matches --color-surface */
+    background: var(--color-surface, #1E293B);
     backdrop-filter: none;
     -webkit-backdrop-filter: none;
   }

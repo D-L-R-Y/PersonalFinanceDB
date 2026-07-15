@@ -199,6 +199,7 @@ function applyTheme(themeName) {
   if (theme === 'custom') {
     const c = settings.customTheme;
     document.documentElement.style.setProperty('--color-bg', c.bgColor);
+    document.documentElement.style.setProperty('--color-surface', c.bgColor);
     document.documentElement.style.setProperty('--color-primary', c.primaryColor);
     document.documentElement.style.setProperty('--color-border', c.borderColor);
     document.documentElement.style.setProperty('--color-text', c.textColor);
