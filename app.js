@@ -1039,10 +1039,11 @@ function exportCSV() {
   const result = db.exec("SELECT id, type, amount, category, date, note FROM transactions ORDER BY date DESC");
   if (!result.length) return showToast('No transactions to export.', 'error');
   
-  const headers = ['id', 'type', 'amount', 'category', 'date', 'note', 'category_name', 'category_color'];
+  const headers = ['id', 'type', 'amount', 'category', 'date', 'note', 'category_color'];
   const rows = result[0].values.map(row => {
     const cat = getCategories().find(c => c.id === row[3]) || {};
-    return [...row, cat.label || row[3], cat.color || ''].map(escapeCSV).join(',');
+    const exportedCategory = cat.label || row[3];
+    return [row[0], row[1], row[2], exportedCategory, row[4], row[5], cat.color || ''].map(escapeCSV).join(',');
   });
   const csvContent = [headers.join(','), ...rows].join('\n');
   
@@ -1065,7 +1066,7 @@ function exportJSON() {
     let obj = {};
     columns.forEach((col, i) => obj[col] = row[i]);
     const cat = getCategories().find(c => c.id === obj.category) || {};
-    obj.category_name = cat.label || obj.category;
+    obj.category = cat.label || obj.category;
     obj.category_color = cat.color || '';
     return obj;
   });
@@ -1097,15 +1098,20 @@ function importCSV(file) {
         headers.forEach((h, idx) => obj[h] = rows[i][idx]);
         
         if (obj.type && obj.amount && obj.date) {
-          db.run(`INSERT INTO transactions (id, type, amount, category, date, note) VALUES (?, ?, ?, ?, ?, ?)`, 
-                 [obj.id || Date.now().toString() + i, obj.type, parseFloat(obj.amount) || 0, obj.category || '', obj.date, obj.note || '']);
+          let catLabel = obj.category_name || obj.category || '';
+          let catId = catLabel;
           
-          if (obj.category_name && obj.category_name !== obj.category) {
-            const existing = settings.categories.find(c => c.id === obj.category);
-            if (!existing) {
-              settings.categories.push({ id: obj.category, label: obj.category_name, color: obj.category_color || '#71717A' });
-            }
+          if (catLabel) {
+             const existing = getCategories().find(c => c.label.toLowerCase() === catLabel.toLowerCase());
+             if (existing) {
+               catId = existing.id;
+             } else {
+               settings.categories.push({ id: catLabel, label: catLabel, color: obj.category_color || '#71717A' });
+             }
           }
+
+          db.run(`INSERT INTO transactions (id, type, amount, category, date, note) VALUES (?, ?, ?, ?, ?, ?)`, 
+                 [obj.id || Date.now().toString() + i, obj.type, parseFloat(obj.amount) || 0, catId, obj.date, obj.note || '']);
           count++;
         }
       }
@@ -1133,15 +1139,20 @@ function importJSON(file) {
       let count = 0;
       for (const obj of data) {
         if (obj.type && obj.amount && obj.date) {
-          db.run(`INSERT INTO transactions (id, type, amount, category, date, note) VALUES (?, ?, ?, ?, ?, ?)`, 
-                 [obj.id || Date.now().toString() + count, obj.type, parseFloat(obj.amount) || 0, obj.category || '', obj.date, obj.note || '']);
+          let catLabel = obj.category_name || obj.category || '';
+          let catId = catLabel;
           
-          if (obj.category_name && obj.category_name !== obj.category) {
-            const existing = settings.categories.find(c => c.id === obj.category);
-            if (!existing) {
-              settings.categories.push({ id: obj.category, label: obj.category_name, color: obj.category_color || '#71717A' });
-            }
+          if (catLabel) {
+             const existing = getCategories().find(c => c.label.toLowerCase() === catLabel.toLowerCase());
+             if (existing) {
+               catId = existing.id;
+             } else {
+               settings.categories.push({ id: catLabel, label: catLabel, color: obj.category_color || '#71717A' });
+             }
           }
+
+          db.run(`INSERT INTO transactions (id, type, amount, category, date, note) VALUES (?, ?, ?, ?, ?, ?)`, 
+                 [obj.id || Date.now().toString() + count, obj.type, parseFloat(obj.amount) || 0, catId, obj.date, obj.note || '']);
           count++;
         }
       }
