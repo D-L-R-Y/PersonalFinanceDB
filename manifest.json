@@ -13,5 +13,8 @@
       "type": "image/png",
       "purpose": "any maskable"
     }
+  ],
+  "protocol_handlers": [
+    { "protocol": "web+financedb", "url": "/?_bca=%s" }
   ]
 }

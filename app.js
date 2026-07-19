@@ -6,24 +6,24 @@
 'use strict';
 
 // ── Constants ──────────────────────────────────────────────
-const DB_KEY       = 'financedb_v1';
+const DB_KEY = 'financedb_v1';
 const SETTINGS_KEY = 'financedb_settings_v1';
 
 const DEFAULT_CATEGORIES = [
-  { id: 'Food',          label: 'Food',          color: '#F59E0B' },
-  { id: 'Transport',     label: 'Transport',     color: '#3B82F6' },
-  { id: 'Bills',         label: 'Bills',         color: '#8B5CF6' },
-  { id: 'Entertainment', label: 'Fun',           color: '#EC4899' },
-  { id: 'Health',        label: 'Health',        color: '#10B981' },
-  { id: 'Shopping',      label: 'Shopping',      color: '#F97316' },
-  { id: 'Others',        label: 'Others',        color: '#6B7280' },
+  { id: 'Food', label: 'Food', color: '#F59E0B' },
+  { id: 'Transport', label: 'Transport', color: '#3B82F6' },
+  { id: 'Bills', label: 'Bills', color: '#8B5CF6' },
+  { id: 'Entertainment', label: 'Fun', color: '#EC4899' },
+  { id: 'Health', label: 'Health', color: '#10B981' },
+  { id: 'Shopping', label: 'Shopping', color: '#F97316' },
+  { id: 'Others', label: 'Others', color: '#6B7280' },
 ];
 
 const DEFAULT_SETTINGS = {
-  appName:    '',
-  currency:   'Rp',
+  appName: '',
+  currency: 'Rp',
   categories: null,   // null = use DEFAULT_CATEGORIES
-  theme:      'midnight',
+  theme: 'midnight',
   customTheme: {
     bgColor: '#1E293B',
     bgImage: null,
@@ -34,28 +34,28 @@ const DEFAULT_SETTINGS = {
 };
 
 const MONTHS = [
-  'January','February','March','April','May','June',
-  'July','August','September','October','November','December'
+  'January', 'February', 'March', 'April', 'May', 'June',
+  'July', 'August', 'September', 'October', 'November', 'December'
 ];
 
 // Theme definitions for the picker UI
 const THEMES = [
-  { id: 'midnight', name: 'Midnight',  desc: 'Deep navy — trusted classic',          preview: ['#0F172A', '#1E40AF', '#059669'], isLight: false },
-  { id: 'obsidian', name: 'Obsidian',  desc: 'True OLED black — indigo glow',         preview: ['#09090B', '#6366F1', '#8B5CF6'], isLight: false },
-  { id: 'ocean',    name: 'Ocean',     desc: 'Deep-sea blues — cyan tones',           preview: ['#0C1222', '#0891B2', '#14B8A6'], isLight: false },
-  { id: 'forest',   name: 'Forest',    desc: 'Dark canopy — emerald accents',          preview: ['#0A1410', '#059669', '#F59E0B'], isLight: false },
-  { id: 'sakura',   name: 'Sakura',    desc: 'Soft rose — warm light theme',           preview: ['#FFF5F5', '#DB2777', '#059669'], isLight: true  },
-  { id: 'sand',     name: 'Sand',      desc: 'Clean warm white — gold accents',        preview: ['#FAFAF9', '#1C1917', '#A16207'], isLight: true  },
-  { id: 'custom',   name: 'Custom',    desc: 'Your personalized theme',                preview: ['#1E293B', '#3B82F6', '#FAFAFA'], isLight: false },
+  { id: 'midnight', name: 'Midnight', desc: 'Deep navy — trusted classic', preview: ['#0F172A', '#1E40AF', '#059669'], isLight: false },
+  { id: 'obsidian', name: 'Obsidian', desc: 'True OLED black — indigo glow', preview: ['#09090B', '#6366F1', '#8B5CF6'], isLight: false },
+  { id: 'ocean', name: 'Ocean', desc: 'Deep-sea blues — cyan tones', preview: ['#0C1222', '#0891B2', '#14B8A6'], isLight: false },
+  { id: 'forest', name: 'Forest', desc: 'Dark canopy — emerald accents', preview: ['#0A1410', '#059669', '#F59E0B'], isLight: false },
+  { id: 'sakura', name: 'Sakura', desc: 'Soft rose — warm light theme', preview: ['#FFF5F5', '#DB2777', '#059669'], isLight: true },
+  { id: 'sand', name: 'Sand', desc: 'Clean warm white — gold accents', preview: ['#FAFAF9', '#1C1917', '#A16207'], isLight: true },
+  { id: 'custom', name: 'Custom', desc: 'Your personalized theme', preview: ['#1E293B', '#3B82F6', '#FAFAFA'], isLight: false },
 ];
 
 // ── State ──────────────────────────────────────────────────
 let db = null;
 let donutChart = null;
-let viewYear  = new Date().getFullYear();
+let viewYear = new Date().getFullYear();
 let viewMonth = new Date().getMonth(); // 0-indexed
 let isAllTime = false;
-let pendingDeleteId   = null;
+let pendingDeleteId = null;
 let pendingDeleteLabel = '';
 let settings = { ...DEFAULT_SETTINGS };  // active settings object
 
@@ -77,7 +77,7 @@ function findCategory(id) {
 
 // ── Format Helpers ─────────────────────────────────────────
 function formatRp(amount) {
-  const n   = Math.abs(Math.round(amount));
+  const n = Math.abs(Math.round(amount));
   const sym = settings.currency || 'Rp';
   return sym + ' ' + n.toLocaleString('id-ID');
 }
@@ -93,8 +93,8 @@ function todayISO() {
 
 function monthRangeISO(year, month) {
   const start = `${year}-${String(month + 1).padStart(2, '0')}-01`;
-  const last  = new Date(year, month + 1, 0).getDate();
-  const end   = `${year}-${String(month + 1).padStart(2, '0')}-${String(last).padStart(2, '0')}`;
+  const last = new Date(year, month + 1, 0).getDate();
+  const end = `${year}-${String(month + 1).padStart(2, '0')}-${String(last).padStart(2, '0')}`;
   return { start, end };
 }
 
@@ -104,7 +104,7 @@ function setupAmountFormatting(inputId) {
   input.addEventListener('input', () => {
     // Save cursor position before reformatting
     const cursorPos = input.selectionStart;
-    const oldLen    = input.value.length;
+    const oldLen = input.value.length;
 
     // Strip everything except digits
     const digits = input.value.replace(/\D/g, '');
@@ -120,7 +120,7 @@ function setupAmountFormatting(inputId) {
 
     // Restore cursor: shift it by however many chars were added/removed
     const newLen = input.value.length;
-    const shift  = newLen - oldLen;
+    const shift = newLen - oldLen;
     const newPos = Math.max(0, cursorPos + shift);
     input.setSelectionRange(newPos, newPos);
   });
@@ -128,8 +128,8 @@ function setupAmountFormatting(inputId) {
   // Only allow digit keys, backspace, delete, arrows, tab
   input.addEventListener('keydown', e => {
     const allowed = [
-      'Backspace','Delete','ArrowLeft','ArrowRight',
-      'ArrowUp','ArrowDown','Tab','Home','End'
+      'Backspace', 'Delete', 'ArrowLeft', 'ArrowRight',
+      'ArrowUp', 'ArrowDown', 'Tab', 'Home', 'End'
     ];
     if (allowed.includes(e.key)) return;
     if (e.key >= '0' && e.key <= '9') return;
@@ -175,9 +175,9 @@ function applySettings() {
   }
   // Sync form fields if modal already rendered
   const nameInput = document.getElementById('settingsName');
-  const curInput  = document.getElementById('settingsCurrency');
+  const curInput = document.getElementById('settingsCurrency');
   if (nameInput) nameInput.value = settings.appName || '';
-  if (curInput)  curInput.value  = settings.currency || 'Rp';
+  if (curInput) curInput.value = settings.currency || 'Rp';
 }
 
 // ── Theme System ──────────────────────────────────────────
@@ -186,10 +186,10 @@ function applySettings() {
 const THEME_META_COLORS = {
   midnight: '#0F172A',
   obsidian: '#09090B',
-  ocean:    '#0C1222',
-  forest:   '#0A1410',
-  sakura:   '#FFF5F5',
-  sand:     '#FAFAF9',
+  ocean: '#0C1222',
+  forest: '#0A1410',
+  sakura: '#FFF5F5',
+  sand: '#FAFAF9',
 };
 
 function applyTheme(themeName) {
@@ -203,7 +203,7 @@ function applyTheme(themeName) {
     document.documentElement.style.setProperty('--color-primary', c.primaryColor);
     document.documentElement.style.setProperty('--color-border', c.borderColor);
     document.documentElement.style.setProperty('--color-text', c.textColor);
-    
+
     if (c.bgImage) {
       document.body.style.backgroundImage = `url(${c.bgImage})`;
       document.body.style.backgroundSize = 'cover';
@@ -245,8 +245,8 @@ function renderThemePicker() {
 
     // Use live custom settings for the Custom swatch preview
     const c = settings.customTheme;
-    const preview = (theme.id === 'custom' && c) 
-      ? [c.bgColor, c.primaryColor, c.textColor] 
+    const preview = (theme.id === 'custom' && c)
+      ? [c.bgColor, c.primaryColor, c.textColor]
       : theme.preview;
 
     swatch.innerHTML = `
@@ -262,7 +262,7 @@ function renderThemePicker() {
       settings.theme = theme.id;
       saveSettings();
       applyTheme(theme.id);
-      
+
       // Toggle custom editor visibility
       const editor = document.getElementById('customThemeEditor');
       if (editor) editor.style.display = (theme.id === 'custom') ? 'block' : 'none';
@@ -285,29 +285,29 @@ function setupCustomThemeControls() {
   const customEditor = document.getElementById('customThemeEditor');
   if (!customEditor) return;
 
-  const bgInput      = document.getElementById('customBgColor');
+  const bgInput = document.getElementById('customBgColor');
   const primaryInput = document.getElementById('customPrimaryColor');
-  const borderInput  = document.getElementById('customBorderColor');
-  const textInput    = document.getElementById('customTextColor');
-  const imageInput   = document.getElementById('customBgImageInput');
-  const btnRemoveBg  = document.getElementById('btnRemoveCustomBg');
+  const borderInput = document.getElementById('customBorderColor');
+  const textInput = document.getElementById('customTextColor');
+  const imageInput = document.getElementById('customBgImageInput');
+  const btnRemoveBg = document.getElementById('btnRemoveCustomBg');
 
   const c = settings.customTheme;
   if (!c) return;
 
-  bgInput.value      = c.bgColor;
+  bgInput.value = c.bgColor;
   primaryInput.value = c.primaryColor;
-  borderInput.value  = c.borderColor;
-  textInput.value    = c.textColor;
+  borderInput.value = c.borderColor;
+  textInput.value = c.textColor;
   if (c.bgImage) {
     btnRemoveBg.style.display = 'inline-flex';
   }
 
   const updateCustom = () => {
-    c.bgColor      = bgInput.value;
+    c.bgColor = bgInput.value;
     c.primaryColor = primaryInput.value;
-    c.borderColor  = borderInput.value;
-    c.textColor    = textInput.value;
+    c.borderColor = borderInput.value;
+    c.textColor = textInput.value;
     saveSettings();
     if (settings.theme === 'custom') {
       applyTheme('custom');
@@ -400,7 +400,7 @@ function renderSettingsCategories() {
   // Name inputs — live update on blur
   list.querySelectorAll('.cat-name-input').forEach(input => {
     input.addEventListener('blur', e => {
-      const idx  = parseInt(e.target.dataset.idx);
+      const idx = parseInt(e.target.dataset.idx);
       const name = e.target.value.trim();
       if (name) {
         settings.categories[idx].label = name;
@@ -462,7 +462,7 @@ async function initDB() {
 
 function persistDB() {
   try {
-    const data   = db.export();
+    const data = db.export();
     const binary = String.fromCharCode(...data);
     localStorage.setItem(DB_KEY, btoa(binary));
   } catch (e) {
@@ -494,12 +494,12 @@ function querySummary(where) {
      FROM transactions WHERE type='expense' ${where}`
   );
 
-  const incomeRow  = income[0]?.values[0]  || [0, 0];
+  const incomeRow = income[0]?.values[0] || [0, 0];
   const expenseRow = expense[0]?.values[0] || [0, 0];
 
   return {
-    totalIncome:  incomeRow[0],
-    incomeCount:  incomeRow[1],
+    totalIncome: incomeRow[0],
+    incomeCount: incomeRow[1],
     totalExpense: expenseRow[0],
     expenseCount: expenseRow[1],
   };
@@ -533,7 +533,7 @@ function queryRecentTransactions(where, limit = TX_PAGE_SIZE, offset = 0) {
   const res = db.exec(
     `SELECT id, type, amount, category, note, date
      FROM transactions
-     ${where ? 'WHERE ' + where.replace('AND','').trim() : ''}
+     ${where ? 'WHERE ' + where.replace('AND', '').trim() : ''}
      ORDER BY date DESC, id DESC
      LIMIT ${limit} OFFSET ${offset}`
   );
@@ -548,7 +548,7 @@ function countTransactions(where) {
   if (!db) return 0;
   const res = db.exec(
     `SELECT COUNT(*) FROM transactions
-     ${where ? 'WHERE ' + where.replace('AND','').trim() : ''}`
+     ${where ? 'WHERE ' + where.replace('AND', '').trim() : ''}`
   );
   return res.length ? res[0].values[0][0] : 0;
 }
@@ -568,41 +568,41 @@ function buildCumulativeWhere() {
 
 // ── Render Dashboard ───────────────────────────────────────
 function renderDashboard() {
-  const where      = buildWhere();
-  const summary    = querySummary(where);
+  const where = buildWhere();
+  const summary = querySummary(where);
   const categories = queryCategoryBreakdown(where);
 
   // Load ALL transactions for the period into the scrollable container
   const total = countTransactions(where);
-  const txs   = queryRecentTransactions(where, total || 500, 0);
+  const txs = queryRecentTransactions(where, total || 500, 0);
 
   // Summary cards
-  document.getElementById('totalIncome').textContent  = formatRp(summary.totalIncome);
+  document.getElementById('totalIncome').textContent = formatRp(summary.totalIncome);
   document.getElementById('totalExpense').textContent = formatRp(summary.totalExpense);
-  document.getElementById('incomeCount').textContent  = `${summary.incomeCount} transaction${summary.incomeCount !== 1 ? 's' : ''}`;
+  document.getElementById('incomeCount').textContent = `${summary.incomeCount} transaction${summary.incomeCount !== 1 ? 's' : ''}`;
   document.getElementById('expenseCount').textContent = `${summary.expenseCount} transaction${summary.expenseCount !== 1 ? 's' : ''}`;
 
   // Balance — show negative with "−" prefix and red color when overspent
-  const cumulativeWhere   = buildCumulativeWhere();
+  const cumulativeWhere = buildCumulativeWhere();
   const cumulativeSummary = querySummary(cumulativeWhere);
-  const balance   = cumulativeSummary.totalIncome - cumulativeSummary.totalExpense;
+  const balance = cumulativeSummary.totalIncome - cumulativeSummary.totalExpense;
   const balanceEl = document.getElementById('totalBalance');
   const balanceSub = document.getElementById('balanceSub');
   balanceEl.className = 'card-value balance';
 
   if (balance < 0) {
-    balanceEl.textContent  = '−' + formatRp(balance);
-    balanceEl.style.color  = 'var(--color-destructive-light)';
+    balanceEl.textContent = '−' + formatRp(balance);
+    balanceEl.style.color = 'var(--color-destructive-light)';
     if (balanceSub) balanceSub.textContent = 'Overspent';
   } else {
-    balanceEl.textContent  = formatRp(balance);
-    balanceEl.style.color  = '';
+    balanceEl.textContent = formatRp(balance);
+    balanceEl.style.color = '';
     if (balanceSub) balanceSub.textContent = 'Total Available Balance';
   }
 
   // Spendings Today (calendar-day)
   const todayData = queryTodaySpending();
-  document.getElementById('todaySpending').textContent     = formatRp(todayData.total);
+  document.getElementById('todaySpending').textContent = formatRp(todayData.total);
   document.getElementById('todaySpendingCount').textContent = `${todayData.count} transaction${todayData.count !== 1 ? 's' : ''} today`;
 
   // Top category — now shown in the donut chart card header
@@ -611,21 +611,21 @@ function renderDashboard() {
     const top = categories[0];
     const catDef = findCategory(top.category) || { label: top.category || 'Others', color: '#6B7280' };
     const pct = ((top.total / summary.totalExpense) * 100).toFixed(1);
-    document.getElementById('topCategory').textContent      = catDef.label;
+    document.getElementById('topCategory').textContent = catDef.label;
     document.getElementById('topCategoryAmount').textContent = formatRp(top.total);
-    document.getElementById('topCategoryPct').textContent    = `(${pct}%)`;
-    
+    document.getElementById('topCategoryPct').textContent = `(${pct}%)`;
+
     // Set dynamic color for the top category badge and text
     topCatHeader.style.setProperty('--top-cat-color', catDef.color);
-    
+
     topCatHeader.classList.remove('hidden');
   } else {
-    document.getElementById('topCategory').textContent      = '—';
+    document.getElementById('topCategory').textContent = '—';
     document.getElementById('topCategoryAmount').textContent = 'No spending yet';
-    document.getElementById('topCategoryPct').textContent    = '';
-    
+    document.getElementById('topCategoryPct').textContent = '';
+
     topCatHeader.style.removeProperty('--top-cat-color');
-    
+
     topCatHeader.classList.add('hidden');
   }
 
@@ -639,8 +639,8 @@ function renderDashboard() {
 
   // Month nav opacity when all-time
   document.getElementById('monthNav').style.opacity = isAllTime ? '0.4' : '1';
-  document.getElementById('btnPrevMonth').disabled  = isAllTime;
-  document.getElementById('btnNextMonth').disabled  = isAllTime;
+  document.getElementById('btnPrevMonth').disabled = isAllTime;
+  document.getElementById('btnNextMonth').disabled = isAllTime;
 
   // Chart + Legend
   renderChart(categories, summary.totalExpense);
@@ -657,10 +657,10 @@ function updateTxBadge(total) {
 
 // ── Chart Rendering ────────────────────────────────────────
 function renderChart(categories, totalExpense) {
-  const chartArea    = document.getElementById('chartArea');
+  const chartArea = document.getElementById('chartArea');
   const noChartState = document.getElementById('noChartState');
-  const legendEl     = document.getElementById('categoryLegend');
-  const centerVal    = document.getElementById('chartCenterValue');
+  const legendEl = document.getElementById('categoryLegend');
+  const centerVal = document.getElementById('chartCenterValue');
 
   centerVal.textContent = formatRp(totalExpense);
 
@@ -679,7 +679,7 @@ function renderChart(categories, totalExpense) {
     const def = findCategory(c.category);
     return def ? def.label : (c.category || 'Others');
   });
-  const data   = categories.map(c => c.total);
+  const data = categories.map(c => c.total);
   const colors = categories.map(c => {
     const def = findCategory(c.category);
     return def ? def.color : '#6B7280';
@@ -695,7 +695,7 @@ function renderChart(categories, totalExpense) {
       datasets: [{
         data,
         backgroundColor: colors.map(c => c + 'CC'),  // ~80% opacity
-        borderColor:     colors,
+        borderColor: colors,
         borderWidth: 2,
         hoverOffset: 8,
         hoverBorderWidth: 3,
@@ -732,10 +732,10 @@ function renderChart(categories, totalExpense) {
   // Legend
   legendEl.innerHTML = '';
   categories.forEach(c => {
-    const def  = findCategory(c.category);
-    const name  = def ? def.label : (c.category || 'Others');
+    const def = findCategory(c.category);
+    const name = def ? def.label : (c.category || 'Others');
     const color = def ? def.color : '#6B7280';
-    const pct   = ((c.total / totalExpense) * 100).toFixed(1);
+    const pct = ((c.total / totalExpense) * 100).toFixed(1);
 
     const item = document.createElement('div');
     item.className = 'legend-item';
@@ -766,10 +766,10 @@ function renderTransactions(txs, total = 0) {
 
   txs.forEach(tx => {
     const isIncome = tx.type === 'income';
-    const catDef   = isIncome ? null : findCategory(tx.category);
+    const catDef = isIncome ? null : findCategory(tx.category);
     const catColor = isIncome ? '#10B981' : (catDef ? catDef.color : '#6B7280');
     const catLabel = isIncome ? 'Income' : (catDef ? catDef.label : (tx.category || 'Others'));
-    const initial  = isIncome ? '+' : catLabel.charAt(0).toUpperCase();
+    const initial = isIncome ? '+' : catLabel.charAt(0).toUpperCase();
     const noteText = tx.note ? tx.note : '—';
 
     const item = document.createElement('div');
@@ -818,8 +818,8 @@ function renderTransactions(txs, total = 0) {
     container.appendChild(item);
 
     // Accordion toggle — simple class-based, no inline styles needed
-    const rowBtn  = item.querySelector('.tx-row');
-    const detail  = item.querySelector('.tx-detail');
+    const rowBtn = item.querySelector('.tx-row');
+    const detail = item.querySelector('.tx-detail');
     const chevron = item.querySelector('.tx-chevron');
     rowBtn.addEventListener('click', () => {
       const isOpen = detail.classList.toggle('tx-detail--open');
@@ -855,10 +855,10 @@ function renderTransactions(txs, total = 0) {
   container.querySelectorAll('.tx-delete').forEach(btn => {
     btn.addEventListener('click', e => {
       e.stopPropagation();
-      const id    = parseInt(btn.dataset.id);
-      const item  = btn.closest('.tx-item');
+      const id = parseInt(btn.dataset.id);
+      const item = btn.closest('.tx-item');
       const label = item.querySelector('.tx-category')?.textContent || 'this transaction';
-      const amt   = item.querySelector('.tx-amount')?.textContent.trim() || '';
+      const amt = item.querySelector('.tx-amount')?.textContent.trim() || '';
       openDeleteModal(id, `${label} · ${amt}`);
     });
   });
@@ -922,7 +922,7 @@ function closeModal(id) {
 
 // ── Delete Confirmation Modal ──────────────────────────────
 function openDeleteModal(id, label) {
-  pendingDeleteId    = id;
+  pendingDeleteId = id;
   pendingDeleteLabel = label;
   document.getElementById('deleteModalDetail').textContent = label;
   openModal('modalDelete');
@@ -946,7 +946,7 @@ function updateMonthView(delta) {
   if (isAllTime) return;
   viewMonth += delta;
   if (viewMonth > 11) { viewMonth = 0; viewYear++; }
-  if (viewMonth < 0)  { viewMonth = 11; viewYear--; }
+  if (viewMonth < 0) { viewMonth = 11; viewYear--; }
   renderDashboard();
 }
 
@@ -960,12 +960,12 @@ function exportDB() {
     }
   }
   const data = db.export();
-  
+
   const blob = new Blob([data], { type: 'application/octet-stream' });
-  const url  = URL.createObjectURL(blob);
-  const a    = document.createElement('a');
-  a.href     = url;
-  a.download = `finance_${new Date().toISOString().slice(0,10)}.db`;
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `finance_${new Date().toISOString().slice(0, 10)}.db`;
   a.click();
   URL.revokeObjectURL(url);
   showToast('Database exported successfully!', 'success');
@@ -999,7 +999,7 @@ function importDB(file) {
             saveSettings();
           }
           db.run("DROP TABLE categories_export");
-        } catch (e) {}
+        } catch (e) { }
 
         if (!hasExportedCategories) {
           try {
@@ -1027,9 +1027,9 @@ function importDB(file) {
               });
               if (changed) saveSettings();
             }
-          } catch(e) {}
+          } catch (e) { }
         }
-      } catch (err) {}
+      } catch (err) { }
 
       persistDB();
       renderDashboard();
@@ -1056,7 +1056,7 @@ function parseCSV(text) {
   let row = [];
   let current = '';
   let inQuotes = false;
-  
+
   for (let i = 0; i < text.length; i++) {
     const char = text[i];
     if (inQuotes) {
@@ -1076,7 +1076,7 @@ function parseCSV(text) {
       } else if (char === ',') {
         row.push(current);
         current = '';
-      } else if (char === '\n' || (char === '\r' && text[i+1] === '\n')) {
+      } else if (char === '\n' || (char === '\r' && text[i + 1] === '\n')) {
         if (char === '\r') i++;
         row.push(current);
         if (row.length > 1 || row[0] !== '') result.push(row);
@@ -1097,7 +1097,7 @@ function parseCSV(text) {
 function exportCSV() {
   const result = db.exec("SELECT id, type, amount, category, date, note FROM transactions ORDER BY date DESC");
   if (!result.length) return showToast('No transactions to export.', 'error');
-  
+
   const headers = ['id', 'type', 'amount', 'category', 'date', 'note', 'category_color'];
   const rows = result[0].values.map(row => {
     const cat = getCategories().find(c => c.id === row[3]) || {};
@@ -1105,12 +1105,12 @@ function exportCSV() {
     return [row[0], row[1], row[2], exportedCategory, row[4], row[5], cat.color || ''].map(escapeCSV).join(',');
   });
   const csvContent = [headers.join(','), ...rows].join('\n');
-  
+
   const blob = new Blob([csvContent], { type: 'text/csv' });
-  const url  = URL.createObjectURL(blob);
-  const a    = document.createElement('a');
-  a.href     = url;
-  a.download = `finance_${new Date().toISOString().slice(0,10)}.csv`;
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `finance_${new Date().toISOString().slice(0, 10)}.csv`;
   a.click();
   URL.revokeObjectURL(url);
   showToast('Exported to CSV!', 'success');
@@ -1119,7 +1119,7 @@ function exportCSV() {
 function exportJSON() {
   const result = db.exec("SELECT id, type, amount, category, date, note FROM transactions ORDER BY date DESC");
   if (!result.length) return showToast('No transactions to export.', 'error');
-  
+
   const columns = result[0].columns;
   const data = result[0].values.map(row => {
     let obj = {};
@@ -1129,12 +1129,12 @@ function exportJSON() {
     obj.category_color = cat.color || '';
     return obj;
   });
-  
+
   const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-  const url  = URL.createObjectURL(blob);
-  const a    = document.createElement('a');
-  a.href     = url;
-  a.download = `finance_${new Date().toISOString().slice(0,10)}.json`;
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `finance_${new Date().toISOString().slice(0, 10)}.json`;
   a.click();
   URL.revokeObjectURL(url);
   showToast('Exported to JSON!', 'success');
@@ -1146,31 +1146,31 @@ function importCSV(file) {
     try {
       const rows = parseCSV(e.target.result);
       if (rows.length < 2) throw new Error('No data');
-      
+
       const headers = rows[0].map(h => h.trim().toLowerCase());
       db.run("BEGIN TRANSACTION");
       let count = 0;
-      
+
       for (let i = 1; i < rows.length; i++) {
         if (rows[i].length !== headers.length) continue;
         const obj = {};
         headers.forEach((h, idx) => obj[h] = rows[i][idx]);
-        
+
         if (obj.type && obj.amount && obj.date) {
           let catLabel = obj.category_name || obj.category || '';
           let catId = catLabel;
-          
+
           if (catLabel) {
-             const existing = getCategories().find(c => c.label.toLowerCase() === catLabel.toLowerCase());
-             if (existing) {
-               catId = existing.id;
-             } else {
-               settings.categories.push({ id: catLabel, label: catLabel, color: obj.category_color || '#71717A' });
-             }
+            const existing = getCategories().find(c => c.label.toLowerCase() === catLabel.toLowerCase());
+            if (existing) {
+              catId = existing.id;
+            } else {
+              settings.categories.push({ id: catLabel, label: catLabel, color: obj.category_color || '#71717A' });
+            }
           }
 
-          db.run(`INSERT INTO transactions (id, type, amount, category, date, note) VALUES (?, ?, ?, ?, ?, ?)`, 
-                 [obj.id || Date.now().toString() + i, obj.type, parseFloat(obj.amount) || 0, catId, obj.date, obj.note || '']);
+          db.run(`INSERT INTO transactions (id, type, amount, category, date, note) VALUES (?, ?, ?, ?, ?, ?)`,
+            [obj.id || Date.now().toString() + i, obj.type, parseFloat(obj.amount) || 0, catId, obj.date, obj.note || '']);
           count++;
         }
       }
@@ -1180,7 +1180,7 @@ function importCSV(file) {
       renderDashboard();
       showToast(`Imported ${count} transactions from CSV!`, 'success');
     } catch (err) {
-      try { db.run("ROLLBACK"); } catch(ex){}
+      try { db.run("ROLLBACK"); } catch (ex) { }
       showToast('Failed to parse CSV.', 'error');
     }
   };
@@ -1193,25 +1193,25 @@ function importJSON(file) {
     try {
       const data = JSON.parse(e.target.result);
       if (!Array.isArray(data)) throw new Error('Not an array');
-      
+
       db.run("BEGIN TRANSACTION");
       let count = 0;
       for (const obj of data) {
         if (obj.type && obj.amount && obj.date) {
           let catLabel = obj.category_name || obj.category || '';
           let catId = catLabel;
-          
+
           if (catLabel) {
-             const existing = getCategories().find(c => c.label.toLowerCase() === catLabel.toLowerCase());
-             if (existing) {
-               catId = existing.id;
-             } else {
-               settings.categories.push({ id: catLabel, label: catLabel, color: obj.category_color || '#71717A' });
-             }
+            const existing = getCategories().find(c => c.label.toLowerCase() === catLabel.toLowerCase());
+            if (existing) {
+              catId = existing.id;
+            } else {
+              settings.categories.push({ id: catLabel, label: catLabel, color: obj.category_color || '#71717A' });
+            }
           }
 
-          db.run(`INSERT INTO transactions (id, type, amount, category, date, note) VALUES (?, ?, ?, ?, ?, ?)`, 
-                 [obj.id || Date.now().toString() + count, obj.type, parseFloat(obj.amount) || 0, catId, obj.date, obj.note || '']);
+          db.run(`INSERT INTO transactions (id, type, amount, category, date, note) VALUES (?, ?, ?, ?, ?, ?)`,
+            [obj.id || Date.now().toString() + count, obj.type, parseFloat(obj.amount) || 0, catId, obj.date, obj.note || '']);
           count++;
         }
       }
@@ -1221,7 +1221,7 @@ function importJSON(file) {
       renderDashboard();
       showToast(`Imported ${count} transactions from JSON!`, 'success');
     } catch (err) {
-      try { db.run("ROLLBACK"); } catch(ex){}
+      try { db.run("ROLLBACK"); } catch (ex) { }
       showToast('Failed to parse JSON.', 'error');
     }
   };
@@ -1233,10 +1233,10 @@ function importJSON(file) {
 function makeCalcState() {
   return {
     currentExpr: '',
-    displayVal:  '0',
-    lastResult:  null,
-    justEvaled:  false,
-    pendingOp:   null,
+    displayVal: '0',
+    lastResult: null,
+    justEvaled: false,
+    pendingOp: null,
   };
 }
 
@@ -1246,13 +1246,13 @@ function calcInput(key, inst) {
 
   if (key === 'C') {
     st.currentExpr = '';
-    st.displayVal  = '0';
-    st.lastResult  = null;
-    st.justEvaled  = false;
-    st.pendingOp   = null;
+    st.displayVal = '0';
+    st.lastResult = null;
+    st.justEvaled = false;
+    st.pendingOp = null;
     resultEl.textContent = '0';
     resultEl.classList.remove('has-result');
-    exprEl.textContent   = '';
+    exprEl.textContent = '';
     return;
   }
 
@@ -1284,13 +1284,13 @@ function calcInput(key, inst) {
       const result = calcEval(expr);
       if (!isFinite(result)) throw new Error('inf');
       const rounded = parseFloat(result.toFixed(10));
-      st.displayVal  = String(rounded);
-      st.lastResult  = rounded;
+      st.displayVal = String(rounded);
+      st.lastResult = rounded;
       st.currentExpr = '';
-      st.justEvaled  = true;
+      st.justEvaled = true;
       resultEl.textContent = formatCalcDisplay(st.displayVal);
       resultEl.classList.add('has-result');
-    } catch(e) {
+    } catch (e) {
       resultEl.textContent = 'Error';
       st.displayVal = '0';
       st.currentExpr = '';
@@ -1315,8 +1315,8 @@ function calcInput(key, inst) {
   // Digit or decimal point
   resultEl.classList.remove('has-result');
   if (st.justEvaled) {
-    st.displayVal  = '';
-    st.justEvaled  = false;
+    st.displayVal = '';
+    st.justEvaled = false;
     st.currentExpr = '';
   }
 
@@ -1363,7 +1363,7 @@ function calcEval(expr) {
 
   // First pass: * and /
   let nums = [];
-  let ops  = [];
+  let ops = [];
   // Split interleaved [num, op, num, op, ...] into separate arrays
   for (let k = 0; k < tokens.length; k++) {
     if (typeof tokens[k] === 'number') nums.push(tokens[k]);
@@ -1375,7 +1375,7 @@ function calcEval(expr) {
   let ni = 0;
   while (ni < ops.length) {
     if (ops[ni] === '*' || ops[ni] === '/') {
-      const r = ops[ni] === '*' ? nums[ni] * nums[ni+1] : nums[ni] / nums[ni+1];
+      const r = ops[ni] === '*' ? nums[ni] * nums[ni + 1] : nums[ni] / nums[ni + 1];
       nums.splice(ni, 2, r);
       ops.splice(ni, 1);
     } else {
@@ -1386,7 +1386,7 @@ function calcEval(expr) {
   // Apply + - left to right
   let result = nums[0];
   for (let oi = 0; oi < ops.length; oi++) {
-    result = ops[oi] === '+' ? result + nums[oi+1] : result - nums[oi+1];
+    result = ops[oi] === '+' ? result + nums[oi + 1] : result - nums[oi + 1];
   }
   return result;
 }
@@ -1421,30 +1421,30 @@ function bindCalcButtons(container, inst) {
 function setupCalculators() {
   // ── 1. Inline calculator inside the Spending form ──────
   const spendInst = {
-    exprEl:    document.getElementById('spendCalcExpr'),
-    resultEl:  document.getElementById('spendCalcResult'),
-    st:        makeCalcState(),
+    exprEl: document.getElementById('spendCalcExpr'),
+    resultEl: document.getElementById('spendCalcResult'),
+    st: makeCalcState(),
   };
   bindCalcButtons(document.getElementById('spendInlineCalc'), spendInst);
 
   // Toggle show/hide
-  const toggleBtn   = document.getElementById('btnSpendCalcToggle');
-  const inlineCalc  = document.getElementById('spendInlineCalc');
-  const amtWrap     = document.getElementById('spendAmountInputWrap');
-  const amtInput    = document.getElementById('spendAmount');
+  const toggleBtn = document.getElementById('btnSpendCalcToggle');
+  const inlineCalc = document.getElementById('spendInlineCalc');
+  const amtWrap = document.getElementById('spendAmountInputWrap');
+  const amtInput = document.getElementById('spendAmount');
 
   toggleBtn.addEventListener('click', () => {
     const open = inlineCalc.style.display === 'none' || inlineCalc.style.display === '';
     if (open) {
       inlineCalc.style.display = 'block';
-      amtWrap.style.display    = 'none';
+      amtWrap.style.display = 'none';
       toggleBtn.classList.add('active');
       toggleBtn.textContent = '';
       // Re-add the SVG icon + new text
       toggleBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="2" width="16" height="20" rx="2"/><line x1="8" y1="6" x2="16" y2="6"/></svg> Direct input`;
     } else {
       inlineCalc.style.display = 'none';
-      amtWrap.style.display    = '';
+      amtWrap.style.display = '';
       toggleBtn.classList.remove('active');
       toggleBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="2" width="16" height="20" rx="2"/><line x1="8" y1="6" x2="16" y2="6"/><line x1="8" y1="10" x2="8" y2="10"/><line x1="12" y1="10" x2="12" y2="10"/><line x1="16" y1="10" x2="16" y2="10"/><line x1="8" y1="14" x2="8" y2="14"/><line x1="12" y1="14" x2="12" y2="14"/><line x1="16" y1="14" x2="16" y2="14"/><line x1="8" y1="18" x2="8" y2="18"/><line x1="12" y1="18" x2="12" y2="18"/><line x1="16" y1="18" x2="16" y2="18"/></svg> Calculator`;
     }
@@ -1453,7 +1453,7 @@ function setupCalculators() {
   // "Use this amount" copies the result to the amount input
   document.getElementById('btnSpendCalcUse').addEventListener('click', () => {
     const raw = spendInst.st.displayVal;
-    const n   = parseFloat(raw);
+    const n = parseFloat(raw);
     if (isNaN(n) || n <= 0) {
       showToast('Please calculate a valid amount first.', 'error');
       return;
@@ -1463,7 +1463,7 @@ function setupCalculators() {
     amtInput.value = rounded.toLocaleString('id-ID');
     // Switch back to direct input view
     inlineCalc.style.display = 'none';
-    amtWrap.style.display    = '';
+    amtWrap.style.display = '';
     toggleBtn.classList.remove('active');
     toggleBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="2" width="16" height="20" rx="2"/><line x1="8" y1="6" x2="16" y2="6"/><line x1="8" y1="10" x2="8" y2="10"/><line x1="12" y1="10" x2="12" y2="10"/><line x1="16" y1="10" x2="16" y2="10"/><line x1="8" y1="14" x2="8" y2="14"/><line x1="12" y1="14" x2="12" y2="14"/><line x1="16" y1="14" x2="16" y2="14"/><line x1="8" y1="18" x2="8" y2="18"/><line x1="12" y1="18" x2="12" y2="18"/><line x1="16" y1="18" x2="16" y2="18"/></svg> Calculator`;
     showToast(`Amount set to ${formatRp(rounded)}`, 'success');
@@ -1475,16 +1475,16 @@ function setupCalculators() {
   document.getElementById('closeSpending').addEventListener('click', () => {
     calcInput('C', spendInst);
     inlineCalc.style.display = 'none';
-    amtWrap.style.display    = '';
+    amtWrap.style.display = '';
     toggleBtn.classList.remove('active');
     toggleBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="2" width="16" height="20" rx="2"/><line x1="8" y1="6" x2="16" y2="6"/><line x1="8" y1="10" x2="8" y2="10"/><line x1="12" y1="10" x2="12" y2="10"/><line x1="16" y1="10" x2="16" y2="10"/><line x1="8" y1="14" x2="8" y2="14"/><line x1="12" y1="14" x2="12" y2="14"/><line x1="16" y1="14" x2="16" y2="14"/><line x1="8" y1="18" x2="8" y2="18"/><line x1="12" y1="18" x2="12" y2="18"/><line x1="16" y1="18" x2="16" y2="18"/></svg> Calculator`;
   }, { capture: true });
 
   // ── 2. Floating standalone calculator ─────────────────
   const floatInst = {
-    exprEl:   document.getElementById('floatCalcExpr'),
+    exprEl: document.getElementById('floatCalcExpr'),
     resultEl: document.getElementById('floatCalcResult'),
-    st:       makeCalcState(),
+    st: makeCalcState(),
   };
   bindCalcButtons(document.getElementById('floatingCalcOverlay'), floatInst);
 
@@ -1505,10 +1505,10 @@ function setupForms() {
   // — Spending form —
   document.getElementById('formSpending').addEventListener('submit', e => {
     e.preventDefault();
-    const amount   = parseAmountInput('spendAmount');
+    const amount = parseAmountInput('spendAmount');
     const category = document.getElementById('selectedCategory').value;
-    const note     = document.getElementById('spendNote').value.trim();
-    const date     = document.getElementById('spendDate').value;
+    const note = document.getElementById('spendNote').value.trim();
+    const date = document.getElementById('spendDate').value;
 
     if (!amount || amount <= 0) {
       showToast('Please enter a valid amount.', 'error');
@@ -1540,8 +1540,8 @@ function setupForms() {
   document.getElementById('formIncome').addEventListener('submit', e => {
     e.preventDefault();
     const amount = parseAmountInput('incomeAmount');
-    const note   = document.getElementById('incomeNote').value.trim();
-    const date   = document.getElementById('incomeDate').value;
+    const note = document.getElementById('incomeNote').value.trim();
+    const date = document.getElementById('incomeDate').value;
 
     if (!amount || amount <= 0) {
       showToast('Please enter a valid amount.', 'error');
@@ -1577,8 +1577,8 @@ function setupEventListeners() {
 
   // Close modals
   document.getElementById('closeSpending').addEventListener('click', () => closeModal('modalSpending'));
-  document.getElementById('closeIncome').addEventListener('click',   () => closeModal('modalIncome'));
-  document.getElementById('closeDelete').addEventListener('click',   () => closeModal('modalDelete'));
+  document.getElementById('closeIncome').addEventListener('click', () => closeModal('modalIncome'));
+  document.getElementById('closeDelete').addEventListener('click', () => closeModal('modalDelete'));
 
   // Delete modal — Cancel & Confirm
   document.getElementById('btnDeleteCancel').addEventListener('click', () => {
@@ -1661,8 +1661,8 @@ function setupEventListeners() {
   // Save profile
   document.getElementById('btnSaveProfile').addEventListener('click', () => {
     const name = document.getElementById('settingsName').value.trim();
-    const cur  = document.getElementById('settingsCurrency').value.trim();
-    settings.appName  = name;
+    const cur = document.getElementById('settingsCurrency').value.trim();
+    settings.appName = name;
     settings.currency = cur || 'Rp';
     saveSettings();
     applySettings();
@@ -1673,9 +1673,9 @@ function setupEventListeners() {
 
   // Add new category
   document.getElementById('btnAddCategory').addEventListener('click', () => {
-    const nameInput  = document.getElementById('newCatName');
+    const nameInput = document.getElementById('newCatName');
     const colorInput = document.getElementById('newCatColor');
-    const name  = nameInput.value.trim();
+    const name = nameInput.value.trim();
     const color = colorInput.value;
     if (!name) { showToast('Please enter a category name.', 'error'); return; }
     if (getCategories().some(c => c.label.toLowerCase() === name.toLowerCase())) {
@@ -1722,6 +1722,73 @@ function setupEventListeners() {
   });
 }
 
+// ── BCA Auto-Queue ────────────────────────────────────────
+/**
+ * Called once on startup after the DB is ready.
+ * Reads the clipboard for a newline-delimited queue of BCA transactions
+ * written by the iOS Shortcut. Each line is a JSON object:
+ *   {"_bca":1, "amount":85000, "note":"Tokopedia", "category":"Shopping",
+ *    "type":"expense", "date":"2026-07-19"}
+ * Valid transactions are batch-inserted with a single persistDB() call,
+ * the clipboard is cleared, and a toast confirms how many were logged.
+ * Any failure (permission denied, malformed data) is silently ignored.
+ */
+async function checkBCAQueue() {
+  if (!navigator.clipboard?.readText) return;
+
+  let text;
+  try {
+    text = await navigator.clipboard.readText();
+  } catch {
+    return; // Clipboard permission denied — fail silently
+  }
+
+  // Fast bail-out: our marker must be present
+  if (!text || !text.includes('"_bca"')) return;
+
+  // Parse newline-delimited JSON (NDJSON) — one transaction object per line
+  const queue = [];
+  for (const line of text.trim().split('\n')) {
+    const trimmed = line.trim();
+    if (!trimmed) continue;
+    try {
+      const tx = JSON.parse(trimmed);
+      if (
+        tx._bca === 1 &&
+        typeof tx.amount === 'number' && tx.amount > 0 &&
+        (tx.type === 'expense' || tx.type === 'income') &&
+        typeof tx.date === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(tx.date)
+      ) {
+        queue.push(tx);
+      }
+    } catch { /* skip malformed lines */ }
+  }
+
+  if (queue.length === 0) return;
+
+  // Clear the clipboard before inserting so re-opening the app won't
+  // double-log if the user force-quits before the toast appears
+  try { await navigator.clipboard.writeText(''); } catch { /* ignore */ }
+
+  // Batch-insert all transactions — no intermediate persistDB() calls
+  for (const tx of queue) {
+    db.run(
+      'INSERT INTO transactions (type, amount, category, note, date) VALUES (?,?,?,?,?)',
+      [tx.type, tx.amount, tx.category || 'Others', tx.note || null, tx.date]
+    );
+  }
+
+  // Single persist + single dashboard re-render for the whole batch
+  persistDB();
+  renderDashboard();
+
+  const n = queue.length;
+  showToast(
+    `${n} BCA transaction${n > 1 ? 's' : ''} auto-logged ✓`,
+    'success'
+  );
+}
+
 // ── Bootstrap ──────────────────────────────────────────────
 async function main() {
   // ── Phase 1: UI setup — always runs, DB-independent ──
@@ -1742,6 +1809,8 @@ async function main() {
   try {
     await initDB();
     renderDashboard();
+    // Check for BCA transactions queued by the iOS Shortcut
+    await checkBCAQueue();
   } catch (err) {
     console.error('Failed to initialize database:', err);
     document.getElementById('app').insertAdjacentHTML('afterbegin', `
