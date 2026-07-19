@@ -1562,6 +1562,23 @@ function setupForms() {
 
 // ── Event Listeners ────────────────────────────────────────
 function setupEventListeners() {
+  // Sync BCA Queue
+  const btnSyncBCA = document.getElementById('btnSyncBCA');
+  if (btnSyncBCA) {
+    btnSyncBCA.addEventListener('click', async () => {
+      // Add a small animation to show it's working
+      const originalText = btnSyncBCA.innerHTML;
+      btnSyncBCA.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="spin"><line x1="12" y1="2" x2="12" y2="6"/><line x1="12" y1="18" x2="12" y2="22"/><line x1="4.93" y1="4.93" x2="7.76" y2="7.76"/><line x1="16.24" y1="16.24" x2="19.07" y2="19.07"/><line x1="2" y1="12" x2="6" y2="12"/><line x1="18" y1="12" x2="22" y2="12"/><line x1="4.93" y1="19.07" x2="7.76" y2="16.24"/><line x1="16.24" y1="4.93" x2="19.07" y2="7.76"/></svg> Syncing...';
+      
+      await checkBCAQueue();
+      
+      // Reset after a brief delay
+      setTimeout(() => {
+        btnSyncBCA.innerHTML = originalText;
+      }, 1000);
+    });
+  }
+
   // Open modals
   document.getElementById('btnAddSpending').addEventListener('click', () => {
     document.getElementById('spendDate').value = todayISO();
@@ -1809,8 +1826,8 @@ async function main() {
   try {
     await initDB();
     renderDashboard();
-    // Check for BCA transactions queued by the iOS Shortcut
-    await checkBCAQueue();
+    // BCA transactions are now synced via the Sync BCA button in the UI
+    // to comply with iOS Safari's user-gesture requirement for clipboard access.
   } catch (err) {
     console.error('Failed to initialize database:', err);
     document.getElementById('app').insertAdjacentHTML('afterbegin', `
